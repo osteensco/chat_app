@@ -125,7 +125,12 @@ func main() {
 
 // TODO
 
-// - create chat room creation workflows
-// - randomize chat room and client names by default
-// - pass more information about clients and chat rooms to backend
-// - add in a data store?
+// - set up process to create a chat room
+// 		- receive room names created from front end
+// 		- create a new chat room and http.Handle with room name as the path and serve chatroom.html
+// 		- notify frontend of room creation
+// 			- this should notify all clients on home page (home page websocket)
+// 		- frontend should update list of rooms
+
+// - set up a different websocket connection for the home page
+// 		- this will be used to maintain an real time list of chatrooms available on the server
