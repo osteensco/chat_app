@@ -35,7 +35,7 @@ func (cr *Chatroom) removeClient(client *Client) {
 }
 
 func (cr *Chatroom) handleConnections(w http.ResponseWriter, r *http.Request) {
-	log.Println("new chatroom created")
+	log.Println("new client entering the chatroom")
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -51,6 +51,7 @@ func (cr *Chatroom) handleConnections(w http.ResponseWriter, r *http.Request) {
 }
 
 func NewChatroom() *Chatroom {
+	log.Println("new chatroom created")
 	return &Chatroom{
 		clients: make(ClientList),
 	}
@@ -81,7 +82,7 @@ func (c *Client) readMessages() {
 			log.Println(err)
 			break
 		}
-		log.Printf("Message received {MessageType: %v, Payload: %v", messageType, string(payload))
+		log.Printf("Message received {MessageType: %v, Payload: %v}", messageType, string(payload))
 
 		for client := range c.chatroom.clients {
 			client.channel <- payload
@@ -123,8 +124,7 @@ func main() {
 }
 
 // TODO
-// - rename chatroom to better reflect its the actions of a client
-// - consolidate client actions
+
 // - create chat room creation workflows
 // - randomize chat room and client names by default
 // - pass more information about clients and chat rooms to backend
