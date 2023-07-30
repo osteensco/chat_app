@@ -59,19 +59,30 @@ window.onload = function () {
         console.log("browser websocket support found");
         conn = new WebSocket("ws://" + document.location.host + "/ws");
 
-        document.getElementById("chatroom-message").onsubmit = (event) => {
-            event.preventDefault();
-            sendMessage(conn);
-        };
+        var chatmessage = document.getElementById("chatroom-message");
+        var createroom = document.getElementById("chatroom-create");
 
-        document.getElementById("chatroom-create").onsubmit = (event) => {
-            event.preventDefault();
-            createChatroom();
-        };
+        if (chatmessage) {
+            chatmessage.onsubmit = (event) => {
+                
+                event.preventDefault();
+                sendMessage(conn);
+
+                conn.onmessage = (message) => {
+                    receiveMessage(message)
+                };
+                 
+            };
+        }
+
+        if (createroom) {
+            createroom.onsubmit = (event) => {
+                event.preventDefault();
+                createChatroom();
+            };
+        }
         
-        conn.onmessage = (message) => {
-            receiveMessage(message)
-        };
+
 
     } else {
         alert("Websockets not supported by browser!");
