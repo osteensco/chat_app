@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Web App</title>
+    <link rel="stylesheet" type="text/css" href="/style.css">
+
+</head>
+
+<body>
+
+    <div class="header-area">
+        <h1>Chat Web App</h1>
+    </div>
+    
+    <div class="parent-area">
+        <div class="main-area">
+            
+
+            <br>
+            <br>
+            
+            <input type="hidden" id="sender" value="Anonymous"></input>
+            <label for="nameInput">Display Name:</label>
+            <input type="text" id="nameInput">
+            <button onclick="changeName()">Change Name</button>
+            
+            <br>
+            <br>
+
+            <textarea class="displaybox" id="chatmessages" readonly name="chatmessages" rows="4" cols="50">
+            </textarea>
+            
+            <br>
+            <br>
+            
+            <form id="chatroom-message">
+                <label for="message">Message:</label>
+                <input type="text" id="message" name="message"><br><br>
+                <input type="submit" value="Send message">
+            </form>
+
+        </div>
+    </div>
+</body>
+
+<script src="/script.js"></script>
+
+</html>
