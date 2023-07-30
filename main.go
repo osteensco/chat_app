@@ -12,6 +12,8 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
+type ClientList map[*Client]bool
+
 type Chatroom struct {
 	clients ClientList
 }
@@ -33,7 +35,7 @@ func (cr *Chatroom) removeClient(client *Client) {
 }
 
 func (cr *Chatroom) handleConnections(w http.ResponseWriter, r *http.Request) {
-	log.Println("new connection")
+	log.Println("new chatroom created")
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -54,20 +56,14 @@ func NewChatroom() *Chatroom {
 	}
 }
 
-type Message struct {
-	Username string `json:"username"`
-	Content  string `json:"content"`
-}
-
 type Client struct {
 	connection *websocket.Conn
 	chatroom   *Chatroom
 	channel    chan []byte
 }
 
-type ClientList map[*Client]bool
-
 func NewClient(conn *websocket.Conn, cr *Chatroom) *Client {
+	log.Println("new client connected to chat room")
 	return &Client{
 		connection: conn,
 		chatroom:   cr,
@@ -125,3 +121,11 @@ func main() {
 	}
 
 }
+
+// TODO
+// - rename chatroom to better reflect its the actions of a client
+// - consolidate client actions
+// - create chat room creation workflows
+// - randomize chat room and client names by default
+// - pass more information about clients and chat rooms to backend
+// - add in a data store?
