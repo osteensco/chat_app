@@ -85,8 +85,7 @@ func (c *Client) readMessages() {
 			log.Println(err)
 			break
 		}
-		log.Println("MessageType: ", messageType)
-		log.Println("Payload: ", string(payload))
+		log.Printf("Message received {MessageType: %v, Payload: %v", messageType, string(payload))
 
 		for client := range c.chatroom.clients {
 			client.channel <- payload

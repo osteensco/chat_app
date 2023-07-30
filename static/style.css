@@ -21,6 +21,11 @@ input[type="submit"] {
     border: solid rgba(135, 17, 245, .5);
   }
 
+button {
+    background-color: rgba(135, 17, 245, 0.45);
+    border: solid rgba(135, 17, 245, .5);
+}
+
 .main-area {
     
     margin: auto;

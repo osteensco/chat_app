@@ -1,10 +1,15 @@
 
-
+function changeName() {
+    const nameInput = document.getElementById('nameInput').value;
+    const outputName = document.getElementById('sender');
+    outputName.value = nameInput || 'Anonymous';
+  }
 
 function sendMessage(conn) {
     var newmessage = document.getElementById("message");
+    var sender = document.getElementById("sender");
     if (newmessage != null) {
-        conn.send(newmessage.value);
+        conn.send(`${sender.value}: ${newmessage.value}`);
         newmessage.value = "";
     }
     return false;
