@@ -71,7 +71,7 @@ window.onload = function () {
                 conn.onmessage = (message) => {
                     receiveMessage(message)
                 };
-                 
+
             };
         }
 

@@ -31,3 +31,5 @@ func main() {
 
 // - set up a different websocket connection for the home page
 // 		- this will be used to maintain an real time list of chatrooms available on the server
+
+// - utilize redis and cockroachDB for persistent storage of chatrooms, and chatroom data
