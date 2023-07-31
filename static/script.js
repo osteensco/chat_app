@@ -1,29 +1,48 @@
 
-function createChatroom() {
+function getRandomString() {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$';
+    const minStringLength = 16;
+    const maxStringLength = 24;
+    const randomStringLength = Math.floor(Math.random() * (maxStringLength - minStringLength + 1)) + minStringLength;
+  
+    let randomString = '';
+    for (let i = 0; i < randomStringLength; i++) {
+      const randomIndex = Math.floor(Math.random() * characters.length);
+      randomString += characters[randomIndex];
+    }
+  
+    return randomString;
+  }
 
-    var roomlist = document.getElementById("room-list");
+function createChatroom(conn) {
+
     var roomname = document.getElementById("roomname").value;
     
     roomname.trim();
 
     if (roomname != "") {
-        newroom = document.createElement("option");
-        newroom.value = "chatroom.html";//change to a random value
-        //send room name to server
-        //wait for confirmation room has been created on the server
-        newroom.text = roomname;
-        
-        roomlist.appendChild(newroom);
-
+        var roompath = getRandomString();
+        conn.send(`{"chatroom": {"name": "${roomname}", "path": "${roompath}"}}`)
         roomname.value = ""
     }
 }
 
+function updateRoomList(message) {
+
+    var roomlist = document.getElementById("room-list");
+
+    var newroom = document.createElement("option");
+    console.log(message);
+    var roominfo = JSON.parse(message.data);
+    newroom.value = roominfo.chatroom.path;
+    newroom.text = roominfo.chatroom.name;
+    roomlist.appendChild(newroom);
+}
+
 function navToChatroom() {
-    var room = document.getElementById("room-list").value;
+    var room = document.getElementById("room-list");
     if (room) {
-        // send request to server with room name path
-        // 
+        window.location.href = `/${room.value}`
     }
 
 }
@@ -41,7 +60,6 @@ function sendMessage(conn) {
         conn.send(`${sender.value}: ${newmessage.value}`);
         newmessage.value = "";
     }
-    return false;
 }
 
 function receiveMessage(message) {
@@ -63,23 +81,23 @@ window.onload = function () {
         var createroom = document.getElementById("chatroom-create");
 
         if (chatmessage) {
-            chatmessage.onsubmit = (event) => {
-                
+            chatmessage.onsubmit = (event) => {  
                 event.preventDefault();
                 sendMessage(conn);
-
-                conn.onmessage = (message) => {
-                    receiveMessage(message)
-                };
-
+            };
+            conn.onmessage = (message) => {
+                receiveMessage(message);
             };
         }
 
         if (createroom) {
             createroom.onsubmit = (event) => {
                 event.preventDefault();
-                createChatroom();
+                createChatroom(conn);
             };
+            conn.onmessage = (message) => {
+                updateRoomList(message);
+            }
         }
         
 

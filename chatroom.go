@@ -14,7 +14,11 @@ var upgrader = websocket.Upgrader{
 
 type ClientList map[*Client]bool
 
+type RoomList map[string]*Chatroom
+
 type Chatroom struct {
+	name    string
+	path    string
 	clients ClientList
 }
 
@@ -50,9 +54,11 @@ func (cr *Chatroom) handleConnections(w http.ResponseWriter, r *http.Request) {
 	client.handleMessages()
 }
 
-func NewChatroom() *Chatroom {
+func NewChatroom(n string, p string) *Chatroom {
 	log.Println("new chatroom created")
 	return &Chatroom{
+		name:    n,
+		path:    p,
 		clients: make(ClientList),
 	}
 }

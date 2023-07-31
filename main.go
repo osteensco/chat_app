@@ -5,13 +5,15 @@ import (
 	"net/http"
 )
 
+var AllRooms RoomList = make(RoomList)
+
 func main() {
 
-	clients := NewChatroom()
+	index := NewChatroom("index", "")
 
 	http.Handle("/", http.FileServer(http.Dir("./static")))
 
-	http.HandleFunc("/ws", clients.handleConnections)
+	http.HandleFunc("/ws", index.handleConnections)
 
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
@@ -22,14 +24,6 @@ func main() {
 
 // TODO
 
-// - set up process to create a chat room
-// 		- receive room names created from front end
-// 		- create a new chat room and http.Handle with room name as the path and serve chatroom.html
-// 		- notify frontend of room creation
-// 			- this should notify all clients on home page (home page websocket)
-// 		- frontend should update list of rooms
+// - figure out how to handle specific url paths on chatroom creation, break out process into its own function
 
-// - set up a different websocket connection for the home page
-// 		- this will be used to maintain an real time list of chatrooms available on the server
-
-// - utilize redis and cockroachDB for persistent storage of chatrooms, and chatroom data
+// - utilize redis and cockroachDB for persistent storage of chatrooms and chatroom data
