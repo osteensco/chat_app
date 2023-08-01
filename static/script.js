@@ -1,6 +1,6 @@
 
 function getRandomString() {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$';
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@$';
     const minStringLength = 16;
     const maxStringLength = 24;
     const randomStringLength = Math.floor(Math.random() * (maxStringLength - minStringLength + 1)) + minStringLength;
@@ -42,7 +42,7 @@ function updateRoomList(message) {
 function navToChatroom() {
     var room = document.getElementById("room-list");
     if (room) {
-        window.location.href = `/${room.value}`
+        window.location.href = `/chatroom/${room.value}`
     }
 
 }

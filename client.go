@@ -2,26 +2,18 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
-	"net/http"
 
 	"github.com/gorilla/websocket"
 )
-
-type Client struct {
-	connection *websocket.Conn
-	chatroom   *Chatroom
-	channel    chan []byte
-}
 
 type NewRoomParse struct {
 	Chatroom SubmittedRoom
 }
 
 type SubmittedRoom struct {
-	name string
-	path string
+	Name string
+	Path string
 }
 
 func NewSubmittedRoom(payload []byte) *SubmittedRoom {
@@ -31,6 +23,7 @@ func NewSubmittedRoom(payload []byte) *SubmittedRoom {
 		log.Println("Error parsing JSON: ", err)
 		return nil
 	}
+	log.Printf("`%v` room received from client with path %v", rm.Chatroom.Name, rm.Chatroom.Path)
 
 	return &rm.Chatroom
 }
@@ -42,6 +35,18 @@ func NewClient(conn *websocket.Conn, cr *Chatroom) *Client {
 		chatroom:   cr,
 		channel:    make(chan []byte),
 	}
+}
+
+func pushToChannel(payload []byte, clients ClientList) {
+	for c := range clients {
+		c.channel <- payload
+	}
+}
+
+type Client struct {
+	connection *websocket.Conn
+	chatroom   *Chatroom
+	channel    chan []byte
 }
 
 func (c *Client) readMessages() {
@@ -56,25 +61,17 @@ func (c *Client) readMessages() {
 		}
 		log.Printf("Message received {MessageType: %v, Payload: %v}", messageType, string(payload))
 
-		newroom := NewSubmittedRoom(payload)
-
-		if newroom == nil {
-			for client := range c.chatroom.clients {
-				client.channel <- payload
-			}
+		if !json.Valid(payload) {
+			pushToChannel(payload, c.chatroom.clients)
 		} else {
-
-			// break this out into a separate function
-
-			roomstruct := NewChatroom(newroom.name, newroom.path)
-			roomname := roomstruct.name
-
 			//TODO
 			// send to redis
-			AllRooms[roomname] = roomstruct
-
-			// determine correct way to do this
-			http.Handle(fmt.Sprintf("/%v", roomstruct.path), http.FileServer(http.Dir("./static/chatroom.html")))
+			// break this out into a separate function
+			newroom := NewSubmittedRoom(payload)
+			roomstruct := NewChatroom(newroom.Name, newroom.Path)
+			roompath := roomstruct.path
+			AllRooms[roompath] = roomstruct
+			pushToChannel(payload, c.chatroom.clients)
 		}
 
 	}
