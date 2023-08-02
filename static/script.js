@@ -77,8 +77,16 @@ window.onload = function () {
         console.log("browser websocket support found");
         
         var pageHost = window.location.host;
-        var pagePath = window.location.pathname;
-        var socketPath = "ws";
+        var pagePath = window.location.pathname === undefined ? "/" : window.location.pathname;
+        var socketPath;
+        console.log(pagePath)
+        console.log(typeof(pagePath))
+        if (pagePath[pagePath.length-1] === "/") {
+            socketPath = "ws"
+
+        } else {
+            socketPath = "/ws"
+        }
         var socketURL = "ws://" + pageHost + pagePath + socketPath;
         console.log(socketURL)
         var conn = new WebSocket(socketURL);

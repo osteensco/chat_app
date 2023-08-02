@@ -19,16 +19,19 @@ func chatroomPathHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("registering path for room: %v", room.name)
 	}
 	http.ServeFile(w, r, "./static/chatroom.html")
-	AllRooms[roomPath].handleConnections(w, r)
 }
 
 func main() {
 
 	index := NewChatroom("index", "")
+	AllRooms["/ws"] = index
 
 	http.Handle("/", http.FileServer(http.Dir("./static")))
 
-	http.HandleFunc("/ws", index.handleConnections)
+	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("websocket handle for path %v", r.URL.Path)
+		AllRooms[r.URL.Path].handleConnections(w, r)
+	})
 
 	http.HandleFunc("/chatroom/", chatroomPathHandler)
 
@@ -41,7 +44,6 @@ func main() {
 
 // TODO
 
-// - I need to adjust the handleConnections so that it is called for the new room when it's created.
-// - Look at a way to potentially map this for each room in AllRooms?
+// - figure out how to handle a basic get request vs a /ws request
 
 // - utilize redis and cockroachDB for persistent storage of chatrooms and chatroom data
