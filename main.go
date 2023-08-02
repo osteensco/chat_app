@@ -10,7 +10,7 @@ var AllRooms RoomList = make(RoomList)
 func chatroomPathHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("checking if room exists...")
 	roomPath := r.URL.Path[len("/chatroom/"):]
-	if roomPath[len(roomPath)-3:] == "/ws" {
+	if roomPath[len(roomPath)-3:] == "/ws" { //unnecessary?
 		roomPath = roomPath[:len(roomPath)-3]
 	}
 	room, ok := AllRooms[roomPath]
@@ -54,6 +54,7 @@ func main() {
 
 // TODO
 
-// - figure out how to handle a basic get request vs a /ws request
+// - need to fix error writing message - websocket: close sent bug
+// - seems to manifest on new connections where channel possibly didn't close properly/as expected
 
-// - utilize redis and cockroachDB for persistent storage of chatrooms and chatroom data
+// - utilize redis and cockroachDB for persistent storage of state, defining chatroom lifecycle, and chatroom/chat data
