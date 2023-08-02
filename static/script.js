@@ -75,7 +75,13 @@ window.onload = function () {
 
     if (window["WebSocket"]) {
         console.log("browser websocket support found");
-        conn = new WebSocket("ws://" + document.location.host + "/ws");
+        
+        var pageHost = window.location.host;
+        var pagePath = window.location.pathname;
+        var socketPath = "ws";
+        var socketURL = "ws://" + pageHost + pagePath + socketPath;
+        console.log(socketURL)
+        var conn = new WebSocket(socketURL);
 
         var chatmessage = document.getElementById("chatroom-message");
         var createroom = document.getElementById("chatroom-create");

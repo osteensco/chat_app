@@ -29,49 +29,47 @@ func NewSubmittedRoom(payload []byte) *SubmittedRoom {
 }
 
 func NewClient(conn *websocket.Conn, cr *Chatroom) *Client {
-	log.Println("new client connected to chat room")
+	log.Printf("new client connected to chatroom with path %v", cr.Path)
 	return &Client{
 		connection: conn,
-		chatroom:   cr,
-		channel:    make(chan []byte),
+		Chatroom:   cr,
 	}
 }
 
 func pushToChannel(payload []byte, clients ClientList) {
 	for c := range clients {
-		c.channel <- payload
+		c.Chatroom.Channel <- payload
 	}
 }
 
 type Client struct {
 	connection *websocket.Conn
-	chatroom   *Chatroom
-	channel    chan []byte
+	Chatroom   *Chatroom
 }
 
 func (c *Client) readMessages() {
-	defer c.chatroom.removeClient(c)
+	defer c.Chatroom.removeClient(c)
 
 	for {
 		messageType, payload, err := c.connection.ReadMessage()
 
 		if err != nil {
 			log.Println(err)
-			break
+			return
 		}
 		log.Printf("Message received {MessageType: %v, Payload: %v}", messageType, string(payload))
 
 		if !json.Valid(payload) {
-			pushToChannel(payload, c.chatroom.clients)
+			pushToChannel(payload, c.Chatroom.clients)
 		} else {
 			//TODO
 			// send to redis
 			// break this out into a separate function
 			newroom := NewSubmittedRoom(payload)
 			roomstruct := NewChatroom(newroom.Name, newroom.Path)
-			roompath := roomstruct.path
+			roompath := roomstruct.Path
 			AllRooms[roompath] = roomstruct
-			pushToChannel(payload, c.chatroom.clients)
+			pushToChannel(payload, c.Chatroom.clients)
 		}
 
 	}
@@ -79,14 +77,16 @@ func (c *Client) readMessages() {
 }
 
 func (c *Client) writeMessages() {
-	defer c.chatroom.removeClient(c)
+	defer c.Chatroom.removeClient(c)
 
-	for message := range c.channel {
+	for message := range c.Chatroom.Channel {
 		if err := c.connection.WriteMessage(websocket.TextMessage, message); err != nil {
-			log.Println(err)
-			return
+			log.Printf("error writing message - %v", err)
+			log.Println(&c.Chatroom.Path)
+			break
 		}
 		log.Println("message sent")
+		log.Printf("chatroom: %v", &c.Chatroom.Path)
 	}
 }
 

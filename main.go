@@ -19,6 +19,7 @@ func chatroomPathHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("registering path for room: %v", room.name)
 	}
 	http.ServeFile(w, r, "./static/chatroom.html")
+	AllRooms[roomPath].handleConnections(w, r)
 }
 
 func main() {
@@ -40,6 +41,7 @@ func main() {
 
 // TODO
 
-// - figure out how to handle specific url paths on chatroom creation, break out process into its own function
+// - I need to adjust the handleConnections so that it is called for the new room when it's created.
+// - Look at a way to potentially map this for each room in AllRooms?
 
 // - utilize redis and cockroachDB for persistent storage of chatrooms and chatroom data
