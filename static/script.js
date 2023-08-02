@@ -82,12 +82,11 @@ window.onload = function () {
         console.log(pagePath)
         console.log(typeof(pagePath))
         if (pagePath[pagePath.length-1] === "/") {
-            socketPath = "ws"
-
+            var socketURL = "ws://" + pageHost + "/ws";
         } else {
-            socketPath = "/ws"
+            var socketURL = "ws://" + pageHost + "/ws" + pagePath;
         }
-        var socketURL = "ws://" + pageHost + pagePath + socketPath;
+        
         console.log(socketURL)
         var conn = new WebSocket(socketURL);
 
