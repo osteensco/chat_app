@@ -78,7 +78,7 @@ window.onload = function () {
         
         var pageHost = window.location.host;
         var pagePath = window.location.pathname === undefined ? "/" : window.location.pathname;
-        var socketPath;
+
         console.log(pagePath)
         console.log(typeof(pagePath))
         if (pagePath[pagePath.length-1] === "/") {
@@ -113,7 +113,18 @@ window.onload = function () {
             }
         }
         
+        window.addEventListener('beforeunload', (event) => {
+            conn.close();
+        });
 
+        conn.addEventListener('close', (event) => {
+            if (event.wasClean) {
+                console.log('websocket closed cleanly');
+            } else {
+                console.error('websocket closed unexpectedly');
+            }
+            console.log('Code:', event.code, 'Reason:', event.reason);
+        });
 
     } else {
         alert("Websockets not supported by browser!");

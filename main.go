@@ -36,7 +36,7 @@ func main() {
 		AllRooms[r.URL.Path].handleConnections(w, r)
 	})
 
-	http.HandleFunc("/ws/", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/ws/chatroom/", func(w http.ResponseWriter, r *http.Request) {
 		roomPath := r.URL.Path
 		roomPath = roomPath[13:]
 		log.Printf("websocket handle for path %v", roomPath)

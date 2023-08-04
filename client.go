@@ -48,13 +48,17 @@ type Client struct {
 }
 
 func (c *Client) readMessages() {
-	defer c.Chatroom.removeClient(c)
+	defer func() {
+		log.Println("closing client connection from RM go routine")
+		c.Chatroom.removeClient(c)
+	}()
 
 	for {
 		messageType, payload, err := c.connection.ReadMessage()
 
 		if err != nil {
 			log.Println(err)
+			pushToChannel([]byte{}, c.Chatroom.clients) //push to channel so that writeMessage errors and closes the connection as well
 			return
 		}
 		log.Printf("message received {MessageType: %v, Payload: '%v'}", messageType, string(payload))
@@ -77,12 +81,14 @@ func (c *Client) readMessages() {
 }
 
 func (c *Client) writeMessages() {
-	defer c.Chatroom.removeClient(c)
-
+	defer func() {
+		log.Println("closing client connection from WM go routine")
+		c.Chatroom.removeClient(c)
+	}()
 	for message := range c.Chatroom.Channel {
 		if err := c.connection.WriteMessage(websocket.TextMessage, message); err != nil {
-			log.Printf("errror in room %v, error writing message - %v", c.Chatroom.Path, err)
-			break
+			log.Printf("error in room %v, error writing message - %v", c.Chatroom.Path, err)
+			return
 		}
 		log.Printf("message sent in chatroom: %v", c.Chatroom.Path)
 	}
