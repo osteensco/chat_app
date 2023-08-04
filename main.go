@@ -54,9 +54,8 @@ func main() {
 
 // TODO
 
-// - need to fix error writing message - websocket: close sent bug
-// 		- seems to manifest on new connections where channel possibly didn't close properly/as expected
+// fix bugs
 
-// - utilize redis and cockroachDB for persistent storage of state, defining chatroom lifecycle, and chatroom/chat data
-
-//  - add a client id and home screen name for logging
+// add features
+//	 - utilize redis and cockroachDB for persistent storage of state, defining chatroom lifecycle, and chatroom/chat data
+//	 - add a client id and home screen name for logging

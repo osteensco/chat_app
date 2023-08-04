@@ -58,7 +58,7 @@ func (c *Client) readMessages() {
 
 		if err != nil {
 			log.Println(err)
-			pushToChannel([]byte{}, c.Chatroom.clients) //push to channel so that writeMessage errors and closes the connection as well
+			pushToChannel([]byte("client disconnect"), c.Chatroom.clients) //push to channel so that writeMessage errors and closes the connection as well
 			return
 		}
 		log.Printf("message received {MessageType: %v, Payload: '%v'}", messageType, string(payload))

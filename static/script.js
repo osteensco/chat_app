@@ -16,12 +16,12 @@ function getRandomString() {
 
 function createChatroom(conn) {
 
-    var roomname = document.getElementById("roomname").value;
+    let roomname = document.getElementById("roomname").value;
     
     roomname.trim();
 
     if (roomname != "") {
-        var roompath = getRandomString();
+        let roompath = getRandomString();
         conn.send(`{"chatroom": {"name": "${roomname}", "path": "${roompath}"}}`)
         roomname.value = ""
     }
@@ -29,18 +29,22 @@ function createChatroom(conn) {
 
 function updateRoomList(message) {
 
-    var roomlist = document.getElementById("room-list");
-
-    var newroom = document.createElement("option");
+    let roomlist = document.getElementById("room-list");
+    let newroom = document.createElement("option");
+    
     console.log(message);
-    var roominfo = JSON.parse(message.data);
+    if (message.data === "client disconnect") {
+        return
+    }
+
+    let roominfo = JSON.parse(message.data);
     newroom.value = roominfo.chatroom.path;
     newroom.text = roominfo.chatroom.name;
     roomlist.appendChild(newroom);
 }
 
 function navToChatroom() {
-    var room = document.getElementById("room-list");
+    const room = document.getElementById("room-list");
     if (room) {
         window.location.href = `/chatroom/${room.value}`
     }
@@ -54,8 +58,8 @@ function changeName() {
   }
 
 function sendMessage(conn) {
-    var newmessage = document.getElementById("message");
-    var sender = document.getElementById("sender");
+    const newmessage = document.getElementById("message");
+    const sender = document.getElementById("sender");
     if (newmessage != null) {
         conn.send(`${sender.value}: ${newmessage.value}`);
         newmessage.value = "";
@@ -63,9 +67,9 @@ function sendMessage(conn) {
 }
 
 function receiveMessage(message) {
-    var chatbox = document.getElementById("chatmessages");
+    let chatbox = document.getElementById("chatmessages");
     console.log(message);
-    var newMessage = message.data;
+    const newMessage = message.data;
     chatbox.value += "\n" + newMessage;
     chatbox.scrollTop = chatbox.scrollHeight;
 
@@ -76,22 +80,21 @@ window.onload = function () {
     if (window["WebSocket"]) {
         console.log("browser websocket support found");
         
-        var pageHost = window.location.host;
-        var pagePath = window.location.pathname === undefined ? "/" : window.location.pathname;
+        let pageHost = window.location.host;
+        let pagePath = window.location.pathname === undefined ? "/" : window.location.pathname;
+        let socketURL;
 
-        console.log(pagePath)
-        console.log(typeof(pagePath))
+
         if (pagePath[pagePath.length-1] === "/") {
-            var socketURL = "ws://" + pageHost + "/ws";
+            socketURL = "ws://" + pageHost + "/ws";
         } else {
-            var socketURL = "ws://" + pageHost + "/ws" + pagePath;
+            socketURL = "ws://" + pageHost + "/ws" + pagePath;
         }
         
-        console.log(socketURL)
-        var conn = new WebSocket(socketURL);
+        let conn = new WebSocket(socketURL);
 
-        var chatmessage = document.getElementById("chatroom-message");
-        var createroom = document.getElementById("chatroom-create");
+        let chatmessage = document.getElementById("chatroom-message");
+        let createroom = document.getElementById("chatroom-create");
 
         if (chatmessage) {
             chatmessage.onsubmit = (event) => {  
@@ -112,19 +115,7 @@ window.onload = function () {
                 updateRoomList(message);
             }
         }
-        
-        window.addEventListener('beforeunload', (event) => {
-            conn.close();
-        });
 
-        conn.addEventListener('close', (event) => {
-            if (event.wasClean) {
-                console.log('websocket closed cleanly');
-            } else {
-                console.error('websocket closed unexpectedly');
-            }
-            console.log('Code:', event.code, 'Reason:', event.reason);
-        });
 
     } else {
         alert("Websockets not supported by browser!");
