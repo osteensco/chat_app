@@ -57,7 +57,7 @@ func (c *Client) readMessages() {
 			log.Println(err)
 			return
 		}
-		log.Printf("Message received {MessageType: %v, Payload: %v}", messageType, string(payload))
+		log.Printf("message received {MessageType: %v, Payload: '%v'}", messageType, string(payload))
 
 		if !json.Valid(payload) {
 			pushToChannel(payload, c.Chatroom.clients)
@@ -81,12 +81,10 @@ func (c *Client) writeMessages() {
 
 	for message := range c.Chatroom.Channel {
 		if err := c.connection.WriteMessage(websocket.TextMessage, message); err != nil {
-			log.Printf("error writing message - %v", err)
-			log.Println(&c.Chatroom.Path)
+			log.Printf("errror in room %v, error writing message - %v", c.Chatroom.Path, err)
 			break
 		}
-		log.Println("message sent")
-		log.Printf("chatroom: %v", &c.Chatroom.Path)
+		log.Printf("message sent in chatroom: %v", c.Chatroom.Path)
 	}
 }
 
