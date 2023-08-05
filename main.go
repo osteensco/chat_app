@@ -37,4 +37,4 @@ func main() {
 
 // add features
 //	 - utilize redis and cockroachDB for persistent storage of state, defining chatroom lifecycle, and chatroom/chat data
-//	 - add a client id and home screen name for logging
+//	 - add a client id and implement cookies for logging

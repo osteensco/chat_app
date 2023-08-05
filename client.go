@@ -70,8 +70,8 @@ func (c *Client) readMessages() {
 			// send to redis
 			// break this out into a separate function
 			newroom := NewSubmittedRoom(payload)
-			roomstruct := NewChatroom(newroom.Name, newroom.Path)
-			roompath := roomstruct.Path
+			roompath := newroom.Path
+			roomstruct := NewChatroom(newroom.Name, roompath)
 			AllRooms[roompath] = roomstruct
 			pushToChannel(payload, c.Chatroom.clients)
 		}
