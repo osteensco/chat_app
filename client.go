@@ -20,7 +20,7 @@ type Client struct {
 
 func (c *Client) readMessages() {
 	defer func() {
-		log.Println("closing client connection from RM go routine")
+		log.Println("closing client connection in RM go routine")
 		c.Chatroom.removeClient(c)
 	}()
 
@@ -53,7 +53,7 @@ func (c *Client) readMessages() {
 
 func (c *Client) writeMessages() {
 	defer func() {
-		log.Println("closing client connection from WM go routine")
+		log.Println("closing client connection in WM go routine")
 		c.Chatroom.removeClient(c)
 	}()
 	for message := range c.Chatroom.Channel {

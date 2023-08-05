@@ -8,15 +8,15 @@ import (
 func main() {
 
 	index := NewChatroom("index", "home page")
-	AllRooms["/ws"] = index
+	AllRooms["/ws_roombuilder"] = index
 
-	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/ws_roombuilder", func(w http.ResponseWriter, r *http.Request) {
 		websocketHandler(r.URL.Path, w, r)
 	})
 
-	http.HandleFunc("/ws/chatroom/", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/ws_chatroom/", func(w http.ResponseWriter, r *http.Request) {
 		roomPath := r.URL.Path
-		roomPath = roomPath[13:]
+		roomPath = roomPath[len("/ws_chatroom/chatroom/"):]
 		websocketHandler(roomPath, w, r)
 	})
 
@@ -36,5 +36,9 @@ func main() {
 // bugs
 
 // add features
+//	 - chatroom messages:
+//		 - ${name of client} has diconnected
+//		 - ${old display name} has changed their name to ${new name}
+//		 - Randomize Anonymous with a series of numbers e.g. Anonymous239523
 //	 - utilize redis and cockroachDB for persistent storage of state, defining chatroom lifecycle, and chatroom/chat data
 //	 - add a client id and implement cookies for logging

@@ -86,9 +86,9 @@ window.onload = function () {
 
 
         if (pagePath[pagePath.length-1] === "/") {
-            socketURL = "ws://" + pageHost + "/ws";
+            socketURL = "ws://" + pageHost + "/ws_roombuilder";
         } else {
-            socketURL = "ws://" + pageHost + "/ws" + pagePath;
+            socketURL = "ws://" + pageHost + "/ws_chatroom" + pagePath;
         }
         
         let conn = new WebSocket(socketURL);
@@ -102,7 +102,9 @@ window.onload = function () {
                 sendMessage(conn);
             };
             conn.onmessage = (message) => {
-                receiveMessage(message);
+                if (message.data != "client disconnect") {
+                    receiveMessage(message);
+                }
             };
         }
 
@@ -112,8 +114,10 @@ window.onload = function () {
                 createChatroom(conn);
             };
             conn.onmessage = (message) => {
-                updateRoomList(message);
-            }
+                if (message.data != "client disconnect") {
+                    updateRoomList(message);
+                }
+            };
         }
 
 
