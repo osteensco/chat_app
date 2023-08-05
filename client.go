@@ -7,35 +7,6 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-type NewRoomParse struct {
-	Chatroom SubmittedRoom
-}
-
-type SubmittedRoom struct {
-	Name string
-	Path string
-}
-
-func NewSubmittedRoom(payload []byte) *SubmittedRoom {
-	var rm NewRoomParse
-	err := json.Unmarshal(payload, &rm)
-	if err != nil {
-		log.Println("Error parsing JSON: ", err)
-		return nil
-	}
-	log.Printf("`%v` room received from client with path %v", rm.Chatroom.Name, rm.Chatroom.Path)
-
-	return &rm.Chatroom
-}
-
-func NewClient(conn *websocket.Conn, cr *Chatroom) *Client {
-	log.Printf("new client connected to chatroom with path %v", cr.Path)
-	return &Client{
-		connection: conn,
-		Chatroom:   cr,
-	}
-}
-
 func pushToChannel(payload []byte, clients ClientList) {
 	for c := range clients {
 		c.Chatroom.Channel <- payload
@@ -97,4 +68,12 @@ func (c *Client) writeMessages() {
 func (c *Client) handleMessages() {
 	go c.readMessages()
 	go c.writeMessages()
+}
+
+func NewClient(conn *websocket.Conn, cr *Chatroom) *Client {
+	log.Printf("new client connected to chatroom with path %v", cr.Path)
+	return &Client{
+		connection: conn,
+		Chatroom:   cr,
+	}
 }

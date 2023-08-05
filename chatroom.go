@@ -1,11 +1,33 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 
 	"github.com/gorilla/websocket"
 )
+
+type NewRoomParse struct {
+	Chatroom SubmittedRoom
+}
+
+type SubmittedRoom struct {
+	Name string
+	Path string
+}
+
+func NewSubmittedRoom(payload []byte) *SubmittedRoom {
+	var rm NewRoomParse
+	err := json.Unmarshal(payload, &rm)
+	if err != nil {
+		log.Println("Error parsing JSON: ", err)
+		return nil
+	}
+	log.Printf("`%v` room received from client with path %v", rm.Chatroom.Name, rm.Chatroom.Path)
+
+	return &rm.Chatroom
+}
 
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
