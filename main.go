@@ -1,11 +1,35 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
+	"os"
+
+	"github.com/joho/godotenv"
+	"github.com/redis/go-redis/v9"
 )
 
 func main() {
+
+	godotenv.Load()
+	redisAddr := os.Getenv("REDISADDRESS")
+	redisPass := os.Getenv("REDISPASSWORD")
+	log.Println(redisAddr)
+	log.Println(redisPass)
+	cacheClient := redis.NewClient(&redis.Options{
+		Addr:     redisAddr,
+		Password: redisPass,
+		DB:       0,
+	})
+	log.Println("client created")
+	ctx := context.Background()
+
+	state, err2 := cacheClient.Ping(ctx).Result()
+	if err2 != nil {
+		log.Println(err2)
+	}
+	log.Println(state)
 
 	index := NewChatroom("index", "home page")
 	AllRooms["/ws_roombuilder"] = index
