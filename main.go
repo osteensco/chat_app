@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/go-redis/redis/v8"
 	"github.com/joho/godotenv"
-	"github.com/redis/go-redis/v9"
 )
 
 func main() {
@@ -27,7 +27,7 @@ func main() {
 
 	state, err2 := cacheClient.Ping(ctx).Result()
 	if err2 != nil {
-		log.Println(err2)
+		log.Printf("error! %v", err2)
 	}
 	log.Println(state)
 
