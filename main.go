@@ -64,5 +64,11 @@ func main() {
 //		 - ${name of client} has diconnected
 //		 - ${old display name} has changed their name to ${new name}
 //		 - Randomize Anonymous with a series of numbers e.g. Anonymous239523
+
 //	 - utilize redis and cockroachDB for persistent storage of state, defining chatroom lifecycle, and chatroom/chat data
-//	 - add a client id and implement cookies for logging
+//		 - currently capturing all available chatrooms
+//			 - should store as basic key value pair in Redis
+//		 - capture message history for each chatroom
+//			 - may need to be hash data type in Redis or JSON module if possible with go-redis
+//		 - add a client id and implement cookies for logging and chatroom data
+//			 - clientList may need to be converted to master client list or just for each chatroom (hash)
