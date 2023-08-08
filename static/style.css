@@ -29,8 +29,12 @@ option {
 
 #room-list {
     overflow: auto;
-    min-width: 10vw;
+    min-width: 25ch;
     background-color: #212529;
+}
+
+#nameInput {
+    width: 20ch;
 }
 
 #message {
@@ -54,15 +58,15 @@ option {
 
 
 .main-area {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     align-items: center;
-    margin-top: auto;
-    margin-bottom: auto;
-    margin-left: 25%;
-    margin-right: 25%;
-    width: 50%;
     border: 3px solid rgba(135, 17, 245, .5);
+    border-radius: 10%;
     padding: 5%;
-    padding-left: 25vh;
+    width: 50%;
+    margin: 0 auto; 
 }
 
 .displaybox {

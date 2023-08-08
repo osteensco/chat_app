@@ -1,12 +1,11 @@
 package main
 
 import (
-	"context"
 	"log"
 	"net/http"
 	"os"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/go-redis/redis"
 	"github.com/joho/godotenv"
 )
 
@@ -22,14 +21,14 @@ func main() {
 		Password: redisPass,
 		DB:       0,
 	})
-	log.Println("client created")
-	ctx := context.Background()
+	log.Println(cacheClient)
+	// ctx := context.Background()
 
-	state, err2 := cacheClient.Ping(ctx).Result()
-	if err2 != nil {
-		log.Printf("error! %v", err2)
-	}
-	log.Println(state)
+	// state, err2 := cacheClient.Ping(ctx).Result()
+	// if err2 != nil {
+	// 	log.Printf("error! %v", err2)
+	// }
+	// log.Println(state)
 
 	index := NewChatroom("index", "home page")
 	AllRooms["/ws_roombuilder"] = index
@@ -72,3 +71,4 @@ func main() {
 //			 - may need to be hash data type in Redis or JSON module if possible with go-redis
 //		 - add a client id and implement cookies for logging and chatroom data
 //			 - clientList may need to be converted to master client list or just for each chatroom (hash)
+//		 - add login and profile page
