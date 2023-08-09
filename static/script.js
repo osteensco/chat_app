@@ -14,6 +14,16 @@ function getRandomString() {
     return randomString;
   }
 
+function generateAnon() {
+    let anon = "Anonymous"
+    const min = 0;
+    const max = 999999;
+    let randomNumber = Math.floor(Math.random() * (max - min + 1)) + min;
+    randomNumber = randomNumber.toString().padStart(6, '0');
+    anon = anon.concat(randomNumber)
+    return anon
+}
+
 function createChatroom(conn) {
 
     let roomname = document.getElementById("roomname").value;
@@ -54,15 +64,16 @@ function navToChatroom() {
 function changeName() {
     const nameInput = document.getElementById('nameInput').value;
     const outputName = document.getElementById('sender');
-    outputName.value = nameInput || 'Anonymous';
+    outputName.value = nameInput || generateAnon();
   }
 
-function sendMessage(conn) {
-    const newmessage = document.getElementById("message");
-    const sender = document.getElementById("sender");
-    if (newmessage != null) {
-        conn.send(`${sender.value}: ${newmessage.value}`);
-        newmessage.value = "";
+function sendMessage(conn, message, sender, enteredName) {
+    if (sender.value != enteredName.value) {
+        enteredName.value = sender.value
+    }
+    if (message != null) {
+        conn.send(`${sender.value}: ${message.value}`);
+        message.value = "";
     }
 }
 
@@ -95,11 +106,19 @@ window.onload = function () {
 
         let chatmessage = document.getElementById("chatroom-message");
         let createroom = document.getElementById("chatroom-create");
+        let nameInput = document.getElementById('nameInput');
+        let displayname = document.getElementById("sender");
+        const newmessage = document.getElementById("message");
+
 
         if (chatmessage) {
+            const defaultName = generateAnon()
+            nameInput.value = defaultName
+            displayname.value = defaultName
+
             chatmessage.onsubmit = (event) => {  
                 event.preventDefault();
-                sendMessage(conn);
+                sendMessage(conn, newmessage, displayname, nameInput);
             };
             conn.onmessage = (message) => {
                 if (message.data != "client disconnect") {

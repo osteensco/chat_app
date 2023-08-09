@@ -61,8 +61,9 @@ func main() {
 // add features
 //	 - chatroom messages:
 //		 - ${name of client} has diconnected
+//			 - storing names and client cookies required
 //		 - ${old display name} has changed their name to ${new name}
-//		 - Randomize Anonymous with a series of numbers e.g. Anonymous239523
+//			 - storing names and client cookies required
 
 //	 - utilize redis and cockroachDB for persistent storage of state, defining chatroom lifecycle, and chatroom/chat data
 //		 - currently capturing all available chatrooms
