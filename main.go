@@ -21,19 +21,7 @@ func main() {
 	index := NewChatroom("index", "home page")
 	AllRooms["/ws_roombuilder"] = index
 
-	http.HandleFunc("/ws_roombuilder", func(w http.ResponseWriter, r *http.Request) {
-		websocketHandler(r.URL.Path, w, r)
-	})
-
-	http.HandleFunc("/ws_chatroom/", func(w http.ResponseWriter, r *http.Request) {
-		roomPath := r.URL.Path
-		roomPath = roomPath[len("/ws_chatroom/chatroom/"):]
-		websocketHandler(roomPath, w, r)
-	})
-
-	http.Handle("/", http.FileServer(http.Dir("./static")))
-
-	http.HandleFunc("/chatroom/", chatroomPathHandler)
+	setHandlers()
 
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
