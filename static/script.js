@@ -21,6 +21,10 @@ function generateAnon() {
     let randomNumber = Math.floor(Math.random() * (max - min + 1)) + min;
     randomNumber = randomNumber.toString().padStart(6, '0');
     anon = anon.concat(randomNumber)
+    // TODO
+    // READ redis record to ensure name doesn't already exist in room
+    // CREATE record in redis and cockroachDB
+    // /api/users
     return anon
 }
 
@@ -32,7 +36,11 @@ function createChatroom(conn) {
 
     if (roomname != "") {
         let roompath = getRandomString();
+        //TODO
+        // READ record in redis to make sure roomname and/or roompath doesn't already exist
+        // /api/roombuilder
         conn.send(`{"chatroom": {"name": "${roomname}", "path": "${roompath}"}}`)
+        // CREATE record in redis and cockroachDB
         roomname.value = ""
     }
 }
@@ -65,6 +73,10 @@ function changeName() {
     const nameInput = document.getElementById('nameInput').value;
     const outputName = document.getElementById('sender');
     outputName.value = nameInput || generateAnon();
+    // TODO
+    // send message showing name was changed
+    // UPDATE redis and cockroachDB
+    // /api/users
   }
 
 function sendMessage(conn, message, sender, enteredName) {
@@ -75,6 +87,9 @@ function sendMessage(conn, message, sender, enteredName) {
         conn.send(`${sender.value}: ${message.value}`);
         message.value = "";
     }
+    // TODO
+    // CREATE or UPDATE record in redis and cockroachDB
+    // /api/chatrooms
 }
 
 function receiveMessage(message) {
@@ -112,6 +127,9 @@ window.onload = function () {
 
 
         if (chatmessage) {
+            // TODO
+            // READ redis and display recent chat messages (last 10? 20?)
+            // /api/chatrooms
             const defaultName = generateAnon()
             nameInput.value = defaultName
             displayname.value = defaultName
@@ -128,6 +146,9 @@ window.onload = function () {
         }
 
         if (createroom) {
+            // TODO
+            // READ redis and display current available chatrooms
+            // /api/roombuilder
             createroom.onsubmit = (event) => {
                 event.preventDefault();
                 createChatroom(conn);

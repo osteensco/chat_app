@@ -38,7 +38,6 @@ func (c *Client) readMessages() {
 			pushToChannel(payload, c.Chatroom.clients)
 		} else {
 			//TODO
-			// send to redis
 			// break this out into a separate function
 			newroom := NewSubmittedRoom(payload)
 			roompath := newroom.Path
