@@ -22,6 +22,7 @@ func main() {
 	AllRooms["/ws_roombuilder"] = index
 
 	setHandlers()
+	initAPI()
 
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
