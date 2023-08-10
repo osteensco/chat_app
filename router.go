@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func roombuilderEP(w http.ResponseWriter, r *http.Request) {
+func lobbyEP(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case "GET":
@@ -72,7 +72,7 @@ func usersEP(w http.ResponseWriter, r *http.Request) {
 
 func initAPI() {
 
-	http.HandleFunc("/api/roombuilder", roombuilderEP)
+	http.HandleFunc("/api/lobby", lobbyEP)
 	http.HandleFunc("/api/chatrooms", chatroomsEP)
 	http.HandleFunc("/api/users", usersEP)
 

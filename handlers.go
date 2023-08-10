@@ -30,7 +30,7 @@ func websocketHandler(roompath string, w http.ResponseWriter, r *http.Request) {
 }
 
 func setHandlers() {
-	http.HandleFunc("/ws_roombuilder", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/ws_lobby", func(w http.ResponseWriter, r *http.Request) {
 		websocketHandler(r.URL.Path, w, r)
 	})
 

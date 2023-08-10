@@ -19,7 +19,7 @@ func main() {
 	defer databaseClient.Close(ctx)
 
 	index := NewChatroom("index", "home page")
-	AllRooms["/ws_roombuilder"] = index
+	AllRooms["/ws_lobby"] = index
 
 	setHandlers()
 	initAPI()

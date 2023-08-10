@@ -38,7 +38,7 @@ function createChatroom(conn) {
         let roompath = getRandomString();
         //TODO
         // READ record in redis to make sure roomname and/or roompath doesn't already exist
-        // /api/roombuilder
+        // /api/lobby
         conn.send(`{"chatroom": {"name": "${roomname}", "path": "${roompath}"}}`)
         // CREATE record in redis and cockroachDB
         roomname.value = ""
@@ -112,7 +112,7 @@ window.onload = function () {
 
 
         if (pagePath[pagePath.length-1] === "/") {
-            socketURL = "ws://" + pageHost + "/ws_roombuilder";
+            socketURL = "ws://" + pageHost + "/ws_lobby";
         } else {
             socketURL = "ws://" + pageHost + "/ws_chatroom" + pagePath;
         }
@@ -148,7 +148,7 @@ window.onload = function () {
         if (createroom) {
             // TODO
             // READ redis and display current available chatrooms
-            // /api/roombuilder
+            // /api/lobby
             createroom.onsubmit = (event) => {
                 event.preventDefault();
                 createChatroom(conn);
