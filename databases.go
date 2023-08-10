@@ -30,6 +30,7 @@ func connectRedis(context context.Context) *redis.Client {
 	}
 
 	return client
+
 }
 
 func connectCockrochDB(context context.Context) *pgx.Conn {
@@ -41,4 +42,5 @@ func connectCockrochDB(context context.Context) *pgx.Conn {
 		log.Println("connection to CockroachDB established")
 	}
 	return conn
+
 }

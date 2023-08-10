@@ -9,6 +9,7 @@ import (
 )
 
 func main() {
+
 	godotenv.Load()
 	ctx := context.Background()
 

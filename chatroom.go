@@ -18,6 +18,7 @@ type SubmittedRoom struct {
 }
 
 func NewSubmittedRoom(payload []byte) *SubmittedRoom {
+
 	var rm NewRoomParse
 	err := json.Unmarshal(payload, &rm)
 	if err != nil {
@@ -27,6 +28,7 @@ func NewSubmittedRoom(payload []byte) *SubmittedRoom {
 	log.Printf("`%v` room received from client with path %v", rm.Chatroom.Name, rm.Chatroom.Path)
 
 	return &rm.Chatroom
+
 }
 
 var upgrader = websocket.Upgrader{
@@ -60,6 +62,7 @@ func (cr *Chatroom) removeClient(client *Client) {
 
 		delete(cr.clients, client)
 	}
+
 }
 
 func (cr *Chatroom) handleConnections(w http.ResponseWriter, r *http.Request) {
@@ -77,9 +80,11 @@ func (cr *Chatroom) handleConnections(w http.ResponseWriter, r *http.Request) {
 	cr.registerClient(client)
 
 	client.handleMessages()
+
 }
 
 func NewChatroom(n string, p string) *Chatroom {
+
 	log.Printf("new chatroom created with path %v", p)
 	return &Chatroom{
 		name:    n,
@@ -87,4 +92,5 @@ func NewChatroom(n string, p string) *Chatroom {
 		clients: make(ClientList),
 		Channel: make(chan []byte),
 	}
+
 }

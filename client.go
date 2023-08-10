@@ -19,6 +19,7 @@ type Client struct {
 }
 
 func (c *Client) readMessages() {
+
 	defer func() {
 		log.Println("closing client connection in RM go routine")
 		c.Chatroom.removeClient(c)
@@ -51,6 +52,7 @@ func (c *Client) readMessages() {
 }
 
 func (c *Client) writeMessages() {
+
 	defer func() {
 		log.Println("closing client connection in WM go routine")
 		c.Chatroom.removeClient(c)
@@ -62,6 +64,7 @@ func (c *Client) writeMessages() {
 		}
 		log.Printf("message sent in chatroom: %v", c.Chatroom.Path)
 	}
+
 }
 
 func (c *Client) handleMessages() {
@@ -70,9 +73,11 @@ func (c *Client) handleMessages() {
 }
 
 func NewClient(conn *websocket.Conn, cr *Chatroom) *Client {
+
 	log.Printf("new client connected to chatroom with path %v", cr.Path)
 	return &Client{
 		connection: conn,
 		Chatroom:   cr,
 	}
+
 }
