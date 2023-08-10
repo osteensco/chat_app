@@ -45,9 +45,10 @@ type Chatroom struct {
 	Channel chan []byte
 }
 
-func (cr *Chatroom) addClient(client *Client) {
-	log.Printf("adding client to chatroom with path %v", cr.Path)
+func (cr *Chatroom) registerClient(client *Client) {
+
 	cr.clients[client] = true
+	log.Printf("registered client with chatroom %v", cr.Path)
 
 }
 
@@ -62,6 +63,7 @@ func (cr *Chatroom) removeClient(client *Client) {
 }
 
 func (cr *Chatroom) handleConnections(w http.ResponseWriter, r *http.Request) {
+
 	log.Printf("new client entering chatroom with path %v", cr.Path)
 
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -72,7 +74,7 @@ func (cr *Chatroom) handleConnections(w http.ResponseWriter, r *http.Request) {
 
 	client := NewClient(conn, cr)
 
-	cr.addClient(client)
+	cr.registerClient(client)
 
 	client.handleMessages()
 }
