@@ -14,17 +14,46 @@ function getRandomString() {
     return randomString;
   }
 
-function generateAnon() {
+function generateAnon(usersEP, pagePath) {
+    //TODO
+    //make this block a function
     let anon = "Anonymous"
     const min = 0;
     const max = 999999;
     let randomNumber = Math.floor(Math.random() * (max - min + 1)) + min;
     randomNumber = randomNumber.toString().padStart(6, '0');
-    anon = anon.concat(randomNumber)
+    anon = anon.concat(randomNumber);
+    //
+
+    const path = pagePath.replace("/","");
     // TODO
     // READ redis record to ensure name doesn't already exist in room
-    // CREATE record in redis and cockroachDB
-    // /api/users
+    fetch(usersEP)//need parameter for room path
+        .then(response => {
+            if (!response.ok) {
+                console.log(`${response.status} ${response.statusText}`)
+            } else {
+                return response.json();
+            }
+        })
+        .then(data => {
+            //TODO
+            // if name does not already exist in room, create record
+            // handle any errors
+
+                // CREATE record in redis and cockroachDB
+            fetch(usersEP, {method: "POST", 
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    chatroom_path: path,  
+                    display_name: anon
+                }) 
+            })
+        })
+
+
     return anon
 }
 
@@ -110,6 +139,9 @@ window.onload = function () {
         let pagePath = window.location.pathname === undefined ? "/" : window.location.pathname;
         let socketURL;
 
+        const lobbyEP = pageHost + "/api/lobby";
+        const chatroomsEP = pageHost + "/api/chatrooms";
+        const usersEP = pageHost + "/api/users";
 
         if (pagePath[pagePath.length-1] === "/") {
             socketURL = "ws://" + pageHost + "/ws_lobby";
