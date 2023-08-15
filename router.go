@@ -49,26 +49,61 @@ func chatroomsEP(w http.ResponseWriter, r *http.Request) {
 
 func usersEP(w http.ResponseWriter, r *http.Request) {
 
-	// TODO
-	// Need parameter for room path
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("Recovered from panic:", r)
+		}
+	}()
+
+	roompath := r.URL.Query().Get("roompath")
+	if roompath == "" {
+		log.Panicf("roompath query parameter not provided! Request URL provided was %v", r.URL)
+	}
+
+	displayname := r.URL.Query().Get("displayname")
 
 	switch r.Method {
+
 	case "GET":
+		// used when a new client enters a room
 		func(w http.ResponseWriter, r *http.Request) {
-			log.Println(r.Method)
+			if displayname != "" {
+				log.Println(displayname)
+			} else {
+				log.Println(r.Method)
+			}
 		}(w, r)
+
 	case "POST":
+		// used when a new client enters a room
 		func(w http.ResponseWriter, r *http.Request) {
-			log.Println(r.Method)
+			if displayname != "" {
+				log.Println(displayname)
+			} else {
+				log.Println(r.Method)
+			}
 		}(w, r)
+
 	case "PUT":
+		// used when a new client changes their display name
 		func(w http.ResponseWriter, r *http.Request) {
-			log.Println(r.Method)
+			if displayname != "" {
+				log.Println(displayname)
+			} else {
+				log.Println(r.Method)
+			}
 		}(w, r)
+
 	case "DELETE":
+		// used when a client leaves a room or a room is removed from the server
 		func(w http.ResponseWriter, r *http.Request) {
-			log.Println(r.Method)
+			if displayname != "" {
+				log.Println(displayname)
+			} else {
+				log.Println(r.Method)
+			}
 		}(w, r)
+
 	}
 
 }

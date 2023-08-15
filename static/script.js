@@ -139,6 +139,8 @@ window.onload = function () {
         let pagePath = window.location.pathname === undefined ? "/" : window.location.pathname;
         let socketURL;
 
+        // TODO
+        // These need to be pased in to a function at somepoint likely, need to finalized API call flow from frontend
         const lobbyEP = pageHost + "/api/lobby";
         const chatroomsEP = pageHost + "/api/chatrooms";
         const usersEP = pageHost + "/api/users";
