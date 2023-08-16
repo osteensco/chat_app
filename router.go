@@ -10,15 +10,15 @@ func lobbyEP(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 		func(w http.ResponseWriter, r *http.Request) {
-			log.Println(r.Method)
+			log.Printf("lobbyEP %v", r.Method)
 		}(w, r)
 	case "POST":
 		func(w http.ResponseWriter, r *http.Request) {
-			log.Println(r.Method)
+			log.Printf("lobbyEP %v", r.Method)
 		}(w, r)
 	case "DELETE":
 		func(w http.ResponseWriter, r *http.Request) {
-			log.Println(r.Method)
+			log.Printf("lobbyEP %v", r.Method)
 		}(w, r)
 	}
 
@@ -29,19 +29,19 @@ func chatroomsEP(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 		func(w http.ResponseWriter, r *http.Request) {
-			log.Println(r.Method)
+			log.Printf("chatroomsEP %v", r.Method)
 		}(w, r)
 	case "POST":
 		func(w http.ResponseWriter, r *http.Request) {
-			log.Println(r.Method)
+			log.Printf("chatroomsEP %v", r.Method)
 		}(w, r)
 	case "PUT":
 		func(w http.ResponseWriter, r *http.Request) {
-			log.Println(r.Method)
+			log.Printf("chatroomsEP %v", r.Method)
 		}(w, r)
 	case "DELETE":
 		func(w http.ResponseWriter, r *http.Request) {
-			log.Println(r.Method)
+			log.Printf("chatroomsEP %v", r.Method)
 		}(w, r)
 	}
 
@@ -68,9 +68,9 @@ func usersEP(w http.ResponseWriter, r *http.Request) {
 		// used when a new client enters a room
 		func(w http.ResponseWriter, r *http.Request) {
 			if displayname != "" {
-				log.Println(displayname)
+				log.Printf("GET %v FROM usersEP", displayname)
 			} else {
-				log.Println(r.Method)
+				log.Printf("GET %v FROM usersEP", displayname)
 			}
 		}(w, r)
 
@@ -78,9 +78,9 @@ func usersEP(w http.ResponseWriter, r *http.Request) {
 		// used when a new client enters a room
 		func(w http.ResponseWriter, r *http.Request) {
 			if displayname != "" {
-				log.Println(displayname)
+				log.Printf("POST %v FROM usersEP", displayname)
 			} else {
-				log.Println(r.Method)
+				log.Printf("POST %v FROM usersEP", displayname)
 			}
 		}(w, r)
 
@@ -88,9 +88,9 @@ func usersEP(w http.ResponseWriter, r *http.Request) {
 		// used when a new client changes their display name
 		func(w http.ResponseWriter, r *http.Request) {
 			if displayname != "" {
-				log.Println(displayname)
+				log.Printf("PUT %v FROM usersEP", displayname)
 			} else {
-				log.Println(r.Method)
+				log.Printf("PUT %v FROM usersEP", displayname)
 			}
 		}(w, r)
 
@@ -98,9 +98,9 @@ func usersEP(w http.ResponseWriter, r *http.Request) {
 		// used when a client leaves a room or a room is removed from the server
 		func(w http.ResponseWriter, r *http.Request) {
 			if displayname != "" {
-				log.Println(displayname)
+				log.Printf("DELETE %v FROM usersEP", displayname)
 			} else {
-				log.Println(r.Method)
+				log.Printf("DELETE %v FROM usersEP", displayname)
 			}
 		}(w, r)
 

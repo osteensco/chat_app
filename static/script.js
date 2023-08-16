@@ -15,34 +15,23 @@ function getRandomString() {
   }
 
 function generateAnon(usersEP, pagePath) {
-    //TODO
-    //make this block a function
+
     let anon = "Anonymous"
     const min = 0;
     const max = 999999;
     let randomNumber = Math.floor(Math.random() * (max - min + 1)) + min;
     randomNumber = randomNumber.toString().padStart(6, '0');
     anon = anon.concat(randomNumber);
-    //
-
+    const userQuery = usersEP.concat(`?displayname=${anon}`);
     const path = pagePath.replace("/","");
-    // TODO
+    
     // READ redis record to ensure name doesn't already exist in room
-    fetch(usersEP)//need parameter for room path
+    fetch(userQuery)
         .then(response => {
             if (!response.ok) {
                 console.log(`${response.status} ${response.statusText}`)
-            } else {
-                return response.json();
-            }
-        })
-        .then(data => {
-            //TODO
-            // if name does not already exist in room, create record
-            // handle any errors
-
                 // CREATE record in redis and cockroachDB
-            fetch(usersEP, {method: "POST", 
+                fetch(usersEP, {method: "POST", 
                 headers: {
                     'Content-Type': 'application/json'
                 },
@@ -51,6 +40,13 @@ function generateAnon(usersEP, pagePath) {
                     display_name: anon
                 }) 
             })
+            
+            } else {
+                return response.json();
+            }
+        })
+        .then(data => {
+            generateAnon(usersEP, pagePath)
         })
 
 
@@ -101,7 +97,9 @@ function navToChatroom() {
 function changeName() {
     const nameInput = document.getElementById('nameInput').value;
     const outputName = document.getElementById('sender');
-    outputName.value = nameInput || generateAnon();
+    const usersEP = '/api/usersEP';
+    const pagePath = window.location.pathname === undefined ? "/" : window.location.pathname;
+    outputName.value = nameInput || generateAnon(usersEP, pagePath);
     // TODO
     // send message showing name was changed
     // UPDATE redis and cockroachDB
@@ -164,7 +162,7 @@ window.onload = function () {
             // TODO
             // READ redis and display recent chat messages (last 10? 20?)
             // /api/chatrooms
-            const defaultName = generateAnon()
+            const defaultName = generateAnon(usersEP, pagePath)
             nameInput.value = defaultName
             displayname.value = defaultName
 
