@@ -33,6 +33,14 @@ func connectRedis(context context.Context) *redis.Client {
 
 }
 
+func addUserToChatroomRedis(ctx context.Context, client *redis.Client, displayName, chatroomPath string) error {
+	_, err := client.SAdd(ctx, "chatroom:"+chatroomPath, displayName).Result()
+	if err != nil {
+		log.Println("Error adding user to chatroom:", err)
+	}
+	return err
+}
+
 func connectCockrochDB(context context.Context) *pgx.Conn {
 
 	conn, err := pgx.Connect(context, os.Getenv("COCKROACHDB"))

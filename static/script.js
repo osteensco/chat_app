@@ -22,8 +22,9 @@ function generateAnon(usersEP, pagePath) {
     let randomNumber = Math.floor(Math.random() * (max - min + 1)) + min;
     randomNumber = randomNumber.toString().padStart(6, '0');
     anon = anon.concat(randomNumber);
-    const userQuery = usersEP.concat(`?displayname=${anon}`);
-    const path = pagePath.replace("/","");
+    
+    const path = pagePath.replace("/chatroom/","");
+    const userQuery = `http://${usersEP}?displayname=${anon}&roompath=${path}`;
     
     // READ redis record to ensure name doesn't already exist in room
     fetch(userQuery)
@@ -31,22 +32,27 @@ function generateAnon(usersEP, pagePath) {
             if (!response.ok) {
                 console.log(`${response.status} ${response.statusText}`)
                 // CREATE record in redis and cockroachDB
-                fetch(usersEP, {method: "POST", 
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ 
-                    chatroom_path: path,  
-                    display_name: anon
-                }) 
-            })
+                fetch(userQuery, {method: "POST", 
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        chatroom_path: path,  
+                        display_name: anon
+                    }) 
+                })
+                    .then(response => {
+                        console.log(response)
+                    })    
             
             } else {
+                console.log(response)
                 return response.json();
             }
         })
         .then(data => {
-            generateAnon(usersEP, pagePath)
+            console.log(`data: ${data}`)
+            // generateAnon(usersEP, pagePath)
         })
 
 

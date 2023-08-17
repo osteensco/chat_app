@@ -1,8 +1,12 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
 	"log"
 	"net/http"
+
+	"github.com/go-redis/redis/v8"
 )
 
 func lobbyEP(w http.ResponseWriter, r *http.Request) {
@@ -47,7 +51,7 @@ func chatroomsEP(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func usersEP(w http.ResponseWriter, r *http.Request) {
+func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisClient *redis.Client) {
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -67,21 +71,28 @@ func usersEP(w http.ResponseWriter, r *http.Request) {
 	case "GET":
 		// used when a new client enters a room
 		func(w http.ResponseWriter, r *http.Request) {
-			if displayname != "" {
-				log.Printf("GET %v FROM usersEP", displayname)
-			} else {
-				log.Printf("GET %v FROM usersEP", displayname)
+
+			log.Printf("GET %v FROM usersEP", displayname)
+			w.WriteHeader(http.StatusBadRequest)
+			response := map[string]interface{}{
+				"ok":     false,
+				"error":  "Display name is missing",
+				"status": http.StatusBadRequest,
 			}
+			json.NewEncoder(w).Encode(response)
+
 		}(w, r)
 
 	case "POST":
 		// used when a new client enters a room
 		func(w http.ResponseWriter, r *http.Request) {
-			if displayname != "" {
-				log.Printf("POST %v FROM usersEP", displayname)
-			} else {
-				log.Printf("POST %v FROM usersEP", displayname)
+			err := addUserToChatroomRedis(ctx, redisClient, displayname, roompath)
+			if err != nil {
+				http.Error(w, "Error adding user to chatroom", http.StatusInternalServerError)
+				return
 			}
+
+			w.WriteHeader(http.StatusOK)
 		}(w, r)
 
 	case "PUT":
@@ -108,7 +119,7 @@ func usersEP(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func initAPI() {
+func initAPI(ctx context.Context, redisClient *redis.Client) {
 
 	http.HandleFunc("/api/lobby", lobbyEP)
 	// lobby: {
@@ -124,7 +135,9 @@ func initAPI() {
 	// 		message text: xxxxxx xxxxx xxxxxx xxxxx
 	// 	}
 	// }
-	http.HandleFunc("/api/users", usersEP)
+	http.HandleFunc("/api/users", func(w http.ResponseWriter, r *http.Request) {
+		usersEP(w, r, ctx, redisClient)
+	})
 	// users: {
 	// 	chatroom path: xxxxxxxxxxxxx,
 	// 	display name: xxxxxx

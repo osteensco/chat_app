@@ -23,7 +23,7 @@ func main() {
 	AllRooms["/ws_lobby"] = index
 
 	setHandlers()
-	initAPI()
+	initAPI(ctx, cacheClient)
 
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
