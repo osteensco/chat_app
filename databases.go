@@ -41,6 +41,23 @@ func addUserToChatroomRedis(ctx context.Context, client *redis.Client, displayNa
 	return err
 }
 
+// func getChatroomUsersRedis(ctx context.Context, client *redis.Client, chatroomPath string) ([]string, error) {
+// 	members, err := client.SMembers(ctx, "chatroom:"+chatroomPath).Result()
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return members, nil
+// }
+
+func isUserInChatroomRedis(ctx context.Context, client *redis.Client, displayname, chatroomPath string) (bool, error) {
+	isMember, err := client.SIsMember(ctx, "chatroom:"+chatroomPath, displayname).Result()
+	if err != nil {
+		return false, err
+	}
+
+	return isMember, nil
+}
+
 func connectCockrochDB(context context.Context) *pgx.Conn {
 
 	conn, err := pgx.Connect(context, os.Getenv("COCKROACHDB"))

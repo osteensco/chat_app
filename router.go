@@ -54,8 +54,15 @@ func chatroomsEP(w http.ResponseWriter, r *http.Request) {
 func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisClient *redis.Client) {
 
 	defer func() {
-		if r := recover(); r != nil {
-			log.Println("Recovered from panic:", r)
+		if rec := recover(); rec != nil {
+			log.Println("Recovered from panic:", rec)
+			w.WriteHeader(http.StatusBadRequest)
+			response := map[string]interface{}{
+				"ok":     false,
+				"error":  rec,
+				"status": http.StatusBadRequest,
+			}
+			json.NewEncoder(w).Encode(response)
 		}
 	}()
 
@@ -65,6 +72,9 @@ func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 	}
 
 	displayname := r.URL.Query().Get("displayname")
+	if roompath == "" {
+		log.Panicf("displayname query parameter not provided! Request URL provided was %v", r.URL)
+	}
 
 	switch r.Method {
 
@@ -73,26 +83,36 @@ func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 		func(w http.ResponseWriter, r *http.Request) {
 
 			log.Printf("GET %v FROM usersEP", displayname)
-			w.WriteHeader(http.StatusBadRequest)
-			response := map[string]interface{}{
-				"ok":     false,
-				"error":  "Display name is missing",
-				"status": http.StatusBadRequest,
+
+			displayNameExists, err := isUserInChatroomRedis(ctx, redisClient, displayname, roompath)
+
+			if err != nil {
+				log.Panicf("Error querying Redis with displayname %v %v", displayname, http.StatusInternalServerError)
+			} else if !displayNameExists {
+				w.WriteHeader(http.StatusBadRequest)
+				response := map[string]interface{}{
+					"ok":     false,
+					"error":  "Display name is missing",
+					"status": http.StatusBadRequest,
+				}
+				json.NewEncoder(w).Encode(response)
+			} else {
+				w.WriteHeader(http.StatusOK)
 			}
-			json.NewEncoder(w).Encode(response)
 
 		}(w, r)
 
 	case "POST":
 		// used when a new client enters a room
 		func(w http.ResponseWriter, r *http.Request) {
+
 			err := addUserToChatroomRedis(ctx, redisClient, displayname, roompath)
 			if err != nil {
-				http.Error(w, "Error adding user to chatroom", http.StatusInternalServerError)
-				return
+				log.Panicf("Error adding user to chatroom %v", http.StatusInternalServerError)
+			} else {
+				w.WriteHeader(http.StatusOK)
 			}
 
-			w.WriteHeader(http.StatusOK)
 		}(w, r)
 
 	case "PUT":

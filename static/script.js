@@ -27,6 +27,9 @@ function generateAnon(usersEP, pagePath) {
     const userQuery = `http://${usersEP}?displayname=${anon}&roompath=${path}`;
     
     // READ redis record to ensure name doesn't already exist in room
+    //TODO
+        //this block needs to be its own function that accepts a function as argument
+        //function is either generateAnon or a message that pops up stating name is already taken and prompts user to enter a different name
     fetch(userQuery)
         .then(response => {
             if (!response.ok) {
@@ -42,17 +45,17 @@ function generateAnon(usersEP, pagePath) {
                     }) 
                 })
                     .then(response => {
+                        console.log('added displayname to set in redis')
                         console.log(response)
                     })    
             
             } else {
-                console.log(response)
+                generateAnon(usersEP, pagePath)//
                 return response.json();
             }
         })
         .then(data => {
             console.log(`data: ${data}`)
-            // generateAnon(usersEP, pagePath)
         })
 
 
