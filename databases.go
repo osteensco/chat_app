@@ -20,13 +20,15 @@ func connectRedis(context context.Context) *redis.Client {
 		DB:       0,
 	})
 
+	log.Println("PING ->")
 	state, err := client.Ping(context).Result()
+	log.Println(state)
 	if err != nil {
 		log.Fatal(err)
 	} else if state == "PONG" {
 		log.Println("connection to Redis established")
 	} else {
-		log.Printf("PING -> %v", state)
+		log.Println("problem encountered connecting to Redis")
 	}
 
 	return client

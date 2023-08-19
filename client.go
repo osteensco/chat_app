@@ -38,13 +38,7 @@ func (c *Client) readMessages() {
 		if !json.Valid(payload) {
 			pushToChannel(payload, c.Chatroom.clients)
 		} else {
-			//TODO
-			// break this out into a separate function
-			newroom := NewSubmittedRoom(payload)
-			roompath := newroom.Path
-			roomstruct := NewChatroom(newroom.Name, roompath)
-			AllRooms[roompath] = roomstruct
-			pushToChannel(payload, c.Chatroom.clients)
+			createNewChatroomFromMessage(c, payload)
 		}
 
 	}

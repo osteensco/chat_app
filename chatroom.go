@@ -31,6 +31,14 @@ func NewSubmittedRoom(payload []byte) *SubmittedRoom {
 
 }
 
+func createNewChatroomFromMessage(c *Client, payload []byte) {
+	newroom := NewSubmittedRoom(payload)
+	roompath := newroom.Path
+	roomstruct := NewChatroom(newroom.Name, roompath)
+	AllRooms[roompath] = roomstruct
+	pushToChannel(payload, c.Chatroom.clients)
+}
+
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
