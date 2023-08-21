@@ -34,6 +34,7 @@ function generateAnon(usersEP, pagePath) {
         .then(response => {
             if (!response.ok) {
                 console.log(`${response.status} ${response.statusText}`)
+                console.log(`${anon} display name available to register in ${path}`)
                 // CREATE record in redis and cockroachDB
                 fetch(userQuery, {method: "POST", 
                     headers: {
@@ -50,7 +51,7 @@ function generateAnon(usersEP, pagePath) {
                     })    
             
             } else {
-                generateAnon(usersEP, pagePath)//
+                generateAnon(usersEP, pagePath);
                 return response.json();
             }
         })
