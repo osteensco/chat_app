@@ -35,17 +35,14 @@ function checkDisplayNameAvailability(callback, pagePath, usersEP, displayname) 
 
     const path = pagePath.replace("/chatroom/","");
     const userQuery = `http://${usersEP}?displayname=${displayname}&roompath=${path}`;
-    
-    // READ redis record to ensure name doesn't already exist in room
-    //TODO
-        //this block needs to be its own function that accepts a function as argument
-        //function is either generateAnon or a message that pops up stating name is already taken and prompts user to enter a different name
+   
     fetch(userQuery)
         .then(response => {
             if (!response.ok) {
                 console.log(`${response.status} ${response.statusText}`)
                 console.log(`${displayname} display name available to register in ${path}`)
-                // CREATE record in redis and cockroachDB
+                // TODO 
+                // CREATE record in cockroachDB
                 fetch(userQuery, {method: "POST", 
                     headers: {
                         'Content-Type': 'application/json'
@@ -56,12 +53,12 @@ function checkDisplayNameAvailability(callback, pagePath, usersEP, displayname) 
                     }) 
                 })
                     .then(response => {
-                        console.log('added displayname to set in redis')
+                        console.log(`added displayname ${displayname} to set in redis`)
                         console.log(response)
                     })    
             
             } else {
-                callback(pagePath, usersEP);
+                callback();
                 return response.json();
             }
         })
@@ -114,27 +111,25 @@ function navToChatroom() {
 
 }
 
-function displayInputMessage(pagePath, usersEp) {
-    alert('name already taken, please choose another');
+function displayInputMessage(nameInput) {
+    alert(`name ${nameInput} already taken, please choose another`);
 }
 
 function getNameInput(usersEP, pagePath) {
     let nameInput = document.getElementById('nameInput').value;
     if (nameInput != '') {    
-        nameInput = checkDisplayNameAvailability(displayInputMessage, pagePath, usersEP, nameInput);
+        nameInput = checkDisplayNameAvailability(() => {
+            displayInputMessage(nameInput);
+        }, pagePath, usersEP, nameInput);
     }
     return nameInput
 }
 
-function changeName() {
+function changeName(usersEP, pagePath) {
     const outputName = document.getElementById('sender');
-    const usersEP = '/api/usersEP';
-    const pagePath = window.location.pathname === undefined ? "/" : window.location.pathname;
     outputName.value = getNameInput(usersEP, pagePath) || generateAnon(usersEP, pagePath);
     // TODO
     // send message showing name was changed
-    // UPDATE redis and cockroachDB
-    // /api/users
   }
 
 function sendMessage(conn, message, sender, enteredName) {
@@ -184,10 +179,11 @@ window.onload = function () {
 
         let chatmessage = document.getElementById("chatroom-message");
         let createroom = document.getElementById("chatroom-create");
-        let nameInput = document.getElementById('nameInput');
+        let nameInput = document.getElementById("nameInput");
+        let nameInputButton = document.getElementById("nameInputButton");
         let displayname = document.getElementById("sender");
         const newmessage = document.getElementById("message");
-
+        
 
         if (chatmessage) {
             // TODO
@@ -196,7 +192,11 @@ window.onload = function () {
             const defaultName = generateAnon(usersEP, pagePath)
             nameInput.value = defaultName
             displayname.value = defaultName
-
+            
+            
+            nameInputButton.onclick = () => {
+                changeName(usersEP, pagePath);
+            };
             chatmessage.onsubmit = (event) => {  
                 event.preventDefault();
                 sendMessage(conn, newmessage, displayname, nameInput);
