@@ -23,8 +23,18 @@ function generateAnon(usersEP, pagePath) {
     randomNumber = randomNumber.toString().padStart(6, '0');
     anon = anon.concat(randomNumber);
     
+    anon = checkDisplayNameAvailability(() => {
+        generateAnon(usersEP, pagePath);
+    }, pagePath, usersEP, anon);
+
+    return anon
+
+    }
+
+function checkDisplayNameAvailability(callback, pagePath, usersEP, displayname) {
+
     const path = pagePath.replace("/chatroom/","");
-    const userQuery = `http://${usersEP}?displayname=${anon}&roompath=${path}`;
+    const userQuery = `http://${usersEP}?displayname=${displayname}&roompath=${path}`;
     
     // READ redis record to ensure name doesn't already exist in room
     //TODO
@@ -34,7 +44,7 @@ function generateAnon(usersEP, pagePath) {
         .then(response => {
             if (!response.ok) {
                 console.log(`${response.status} ${response.statusText}`)
-                console.log(`${anon} display name available to register in ${path}`)
+                console.log(`${displayname} display name available to register in ${path}`)
                 // CREATE record in redis and cockroachDB
                 fetch(userQuery, {method: "POST", 
                     headers: {
@@ -42,7 +52,7 @@ function generateAnon(usersEP, pagePath) {
                     },
                     body: JSON.stringify({ 
                         chatroom_path: path,  
-                        display_name: anon
+                        display_name: displayname
                     }) 
                 })
                     .then(response => {
@@ -51,7 +61,7 @@ function generateAnon(usersEP, pagePath) {
                     })    
             
             } else {
-                generateAnon(usersEP, pagePath);
+                callback(pagePath, usersEP);
                 return response.json();
             }
         })
@@ -60,7 +70,7 @@ function generateAnon(usersEP, pagePath) {
         })
 
 
-    return anon
+    return displayname
 }
 
 function createChatroom(conn) {
@@ -104,12 +114,23 @@ function navToChatroom() {
 
 }
 
+function displayInputMessage(pagePath, usersEp) {
+    alert('name already taken, please choose another');
+}
+
+function getNameInput(usersEP, pagePath) {
+    let nameInput = document.getElementById('nameInput').value;
+    if (nameInput != '') {    
+        nameInput = checkDisplayNameAvailability(displayInputMessage, pagePath, usersEP, nameInput);
+    }
+    return nameInput
+}
+
 function changeName() {
-    const nameInput = document.getElementById('nameInput').value;
     const outputName = document.getElementById('sender');
     const usersEP = '/api/usersEP';
     const pagePath = window.location.pathname === undefined ? "/" : window.location.pathname;
-    outputName.value = nameInput || generateAnon(usersEP, pagePath);
+    outputName.value = getNameInput(usersEP, pagePath) || generateAnon(usersEP, pagePath);
     // TODO
     // send message showing name was changed
     // UPDATE redis and cockroachDB
@@ -148,7 +169,7 @@ window.onload = function () {
         let socketURL;
 
         // TODO
-        // These need to be pased in to a function at somepoint likely, need to finalized API call flow from frontend
+        // These need to be passed in to a function at somepoint likely, need to finalized API call flow from frontend
         const lobbyEP = pageHost + "/api/lobby";
         const chatroomsEP = pageHost + "/api/chatrooms";
         const usersEP = pageHost + "/api/users";
