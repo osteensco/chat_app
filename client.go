@@ -48,9 +48,12 @@ func (c *Client) readMessages() {
 func (c *Client) writeMessages() {
 
 	defer func() {
+
 		log.Println("closing client connection in WM go routine")
 		c.Chatroom.removeClient(c)
+
 	}()
+
 	for message := range c.Chatroom.Channel {
 		if err := c.connection.WriteMessage(websocket.TextMessage, message); err != nil {
 			log.Printf("error in room %v, error writing message - %v", c.Chatroom.Path, err)

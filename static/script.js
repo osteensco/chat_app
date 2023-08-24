@@ -193,7 +193,9 @@ window.onload = function () {
             nameInput.value = defaultName
             displayname.value = defaultName
             
-            
+            conn.onopen = () => {
+                conn.send(`${displayname.value} has entered the chat`)
+            };
             nameInputButton.onclick = () => {
                 changeName(usersEP, pagePath);
             };
