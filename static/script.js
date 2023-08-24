@@ -115,21 +115,26 @@ function displayInputMessage(nameInput) {
     alert(`name ${nameInput} already taken, please choose another`);
 }
 
-function getNameInput(usersEP, pagePath) {
-    let nameInput = document.getElementById('nameInput').value;
-    if (nameInput != '') {    
-        nameInput = checkDisplayNameAvailability(() => {
-            displayInputMessage(nameInput);
-        }, pagePath, usersEP, nameInput);
+function getNameInput(conn, usersEP, pagePath) {
+    let nameInput = document.getElementById('nameInput');
+    if (nameInput.value != '') {    
+        nameInput.value = checkDisplayNameAvailability(() => {
+            displayInputMessage(nameInput.value);
+        }, pagePath, usersEP, nameInput.value);
     }
-    return nameInput
+
+    return nameInput.value
 }
 
-function changeName(usersEP, pagePath) {
+function changeName(conn, usersEP, pagePath) {
     const outputName = document.getElementById('sender');
-    outputName.value = getNameInput(usersEP, pagePath) || generateAnon(usersEP, pagePath);
-    // TODO
-    // send message showing name was changed
+    const newName = getNameInput(conn, usersEP, pagePath);
+
+    if (outputName.value != newName) {
+        conn.send(`${outputName.value} changed their name to ${newName}`)
+    }
+
+    outputName.value = newName;
   }
 
 function sendMessage(conn, message, sender, enteredName) {
@@ -197,7 +202,7 @@ window.onload = function () {
                 conn.send(`${displayname.value} has entered the chat`)
             };
             nameInputButton.onclick = () => {
-                changeName(usersEP, pagePath);
+                changeName(conn, usersEP, pagePath);
             };
             chatmessage.onsubmit = (event) => {  
                 event.preventDefault();
