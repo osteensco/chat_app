@@ -79,7 +79,7 @@ func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 	switch r.Method {
 
 	case "GET":
-		// used when a new client enters a room
+		// used when a new client enters a room or a clients displayname is changed
 		func(w http.ResponseWriter, r *http.Request) {
 
 			log.Printf("GET %v FROM usersEP", displayname)

@@ -42,6 +42,7 @@ function checkDisplayNameAvailability(callback, pagePath, usersEP, displayname) 
                 console.log(`${response.status} ${response.statusText}`)
                 console.log(`${displayname} display name available to register in ${path}`)
                 // TODO 
+                // add aditional logic to do PUT request for name change events
                 // CREATE record in cockroachDB
                 fetch(userQuery, {method: "POST", 
                     headers: {
