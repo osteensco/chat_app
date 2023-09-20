@@ -31,7 +31,7 @@ function generateAnon(usersEP, pagePath) {
 
     }
 
-function checkDisplayNameAvailability(callback, pagePath, usersEP, displayname) {
+function checkDisplayNameAvailability(callback, pagePath, usersEP, displayname, originalName) {
 
     const path = pagePath.replace("/chatroom/","");
     const userQuery = `http://${usersEP}?displayname=${displayname}&roompath=${path}`;
@@ -56,18 +56,13 @@ function checkDisplayNameAvailability(callback, pagePath, usersEP, displayname) 
                     .then(response => {
                         console.log(`added displayname ${displayname} to set in redis`)
                         console.log(response)
+                        
                     })    
-            
+
             } else {
-                callback();
-                return response.json();
+                return callback();
             }
         })
-        .then(data => {
-            console.log(`data: ${data}`)
-        })
-
-
     return displayname
 }
 
@@ -112,30 +107,38 @@ function navToChatroom() {
 
 }
 
-function displayInputMessage(nameInput) {
+function displayInputMessage(nameInput, originalName) {
     alert(`name ${nameInput} already taken, please choose another`);
+    return originalName
 }
 
-function getNameInput(conn, usersEP, pagePath) {
+function getNameInput(conn, usersEP, pagePath, originalName) {
     let nameInput = document.getElementById('nameInput');
     if (nameInput.value != '') {    
         nameInput.value = checkDisplayNameAvailability(() => {
-            displayInputMessage(nameInput.value);
+            displayInputMessage(nameInput.value, originalName);
         }, pagePath, usersEP, nameInput.value);
     }
-
+    console.log(nameInput.value)
     return nameInput.value
 }
 
 function changeName(conn, usersEP, pagePath) {
     const outputName = document.getElementById('sender');
-    const newName = getNameInput(conn, usersEP, pagePath);
-
+    const newName = getNameInput(conn, usersEP, pagePath, outputName.value);
+    // TODO
+    // dont update name if already taken
     if (outputName.value != newName) {
+        console.log('outputName.value, newName')
+        console.log(outputName.value, newName)
         conn.send(`${outputName.value} changed their name to ${newName}`)
+        outputName.value = newName;
+    } else {
+        let nameInput = document.getElementById('nameInput');
+        nameInput.value = outputName.value
     }
 
-    outputName.value = newName;
+
   }
 
 function sendMessage(conn, message, sender, enteredName) {
