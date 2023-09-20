@@ -14,7 +14,7 @@ function getRandomString() {
     return randomString;
   }
 
-function generateAnon(usersEP, pagePath) {
+async function generateAnon(usersEP, pagePath) {
 
     let anon = "Anonymous"
     const min = 0;
@@ -23,7 +23,7 @@ function generateAnon(usersEP, pagePath) {
     randomNumber = randomNumber.toString().padStart(6, '0');
     anon = anon.concat(randomNumber);
     
-    anon = checkDisplayNameAvailability(() => {
+    anon = await checkDisplayNameAvailability(() => {
         generateAnon(usersEP, pagePath);
     }, pagePath, usersEP, anon);
 
@@ -31,39 +31,35 @@ function generateAnon(usersEP, pagePath) {
 
     }
 
-function checkDisplayNameAvailability(callback, pagePath, usersEP, displayname, originalName) {
+async function checkDisplayNameAvailability(callback, pagePath, usersEP, displayname) {
 
     const path = pagePath.replace("/chatroom/","");
     const userQuery = `http://${usersEP}?displayname=${displayname}&roompath=${path}`;
-   
-    fetch(userQuery)
-        .then(response => {
-            if (!response.ok) {
-                console.log(`${response.status} ${response.statusText}`)
-                console.log(`${displayname} display name available to register in ${path}`)
-                // TODO 
-                // add aditional logic to do PUT request for name change events
-                // CREATE record in cockroachDB
-                fetch(userQuery, {method: "POST", 
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ 
-                        chatroom_path: path,  
-                        display_name: displayname
-                    }) 
-                })
-                    .then(response => {
-                        console.log(`added displayname ${displayname} to set in redis`)
-                        console.log(response)
-                        
-                    })    
 
-            } else {
-                return callback();
-            }
-        })
-    return displayname
+    const response = await fetch(userQuery);
+    console.log(`${response.status} ${response.statusText}`);
+
+    if (!response.ok) {
+        console.log(`${displayname} display name available to register in ${path}`);
+        // TODO: Add additional logic
+        // CREATE record in cockroachDB
+
+        await fetch(userQuery, {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                chatroom_path: path,
+                display_name: displayname
+            })
+        });
+        return displayname;
+    } else {
+        console.log(`${displayname} display name already registered in ${path}`);
+        callback();
+    }
+
 }
 
 function createChatroom(conn) {
@@ -107,30 +103,25 @@ function navToChatroom() {
 
 }
 
-function displayInputMessage(nameInput, originalName) {
-    alert(`name ${nameInput} already taken, please choose another`);
-    return originalName
-}
 
-function getNameInput(conn, usersEP, pagePath, originalName) {
+
+async function getNameInput(conn, usersEP, pagePath) {
     let nameInput = document.getElementById('nameInput');
     if (nameInput.value != '') {    
-        nameInput.value = checkDisplayNameAvailability(() => {
-            displayInputMessage(nameInput.value, originalName);
+        nameInput.value = await checkDisplayNameAvailability(() => {
+            alert(`name ${nameInput.value} already taken, please choose another`);
         }, pagePath, usersEP, nameInput.value);
     }
-    console.log(nameInput.value)
+
     return nameInput.value
 }
 
-function changeName(conn, usersEP, pagePath) {
+async function changeName(conn, usersEP, pagePath) {
     const outputName = document.getElementById('sender');
-    const newName = getNameInput(conn, usersEP, pagePath, outputName.value);
+    const newName = await getNameInput(conn, usersEP, pagePath, outputName.value);
     // TODO
     // dont update name if already taken
-    if (outputName.value != newName) {
-        console.log('outputName.value, newName')
-        console.log(outputName.value, newName)
+    if (newName != 'undefined') {
         conn.send(`${outputName.value} changed their name to ${newName}`)
         outputName.value = newName;
     } else {
@@ -163,7 +154,7 @@ function receiveMessage(message) {
 
 }
 
-window.onload = function () {
+window.onload = async function () {
 
     if (window["WebSocket"]) {
         console.log("browser websocket support found");
@@ -198,15 +189,15 @@ window.onload = function () {
             // TODO
             // READ redis and display recent chat messages (last 10? 20?)
             // /api/chatrooms
-            const defaultName = generateAnon(usersEP, pagePath)
-            nameInput.value = defaultName
-            displayname.value = defaultName
+            const defaultName = await generateAnon(usersEP, pagePath);
+            nameInput.value = defaultName;
+            displayname.value = defaultName;
             
             conn.onopen = () => {
                 conn.send(`${displayname.value} has entered the chat`)
             };
-            nameInputButton.onclick = () => {
-                changeName(conn, usersEP, pagePath);
+            nameInputButton.onclick = async () => {
+                await changeName(conn, usersEP, pagePath);
             };
             chatmessage.onsubmit = (event) => {  
                 event.preventDefault();
