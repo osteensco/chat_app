@@ -35,6 +35,26 @@ func lobbyEP(w http.ResponseWriter, r *http.Request) {
 
 func chatroomsEP(w http.ResponseWriter, r *http.Request) {
 
+	defer func() {
+		if rec := recover(); rec != nil {
+			log.Println("Recovered from panic:", rec)
+			w.WriteHeader(http.StatusBadRequest)
+			response := map[string]interface{}{
+				"ok":     false,
+				"error":  rec,
+				"status": http.StatusBadRequest,
+			}
+			json.NewEncoder(w).Encode(response)
+		}
+	}()
+
+	roompath := r.URL.Query().Get("roompath")
+	if roompath == "" {
+		log.Panicf("roompath query parameter not provided! Request URL provided was %v", r.URL)
+	}
+
+	log.Printf("%v message(s) for room %v at chatroomsEP", r.Method, roompath)
+
 	switch r.Method {
 	case "GET":
 		//used to get chat history on user entering room
@@ -44,6 +64,12 @@ func chatroomsEP(w http.ResponseWriter, r *http.Request) {
 
 	case "PUT":
 		// used to add to chat history
+
+		chatMessage := r.URL.Query().Get("chatmessage")
+		if chatMessage == "" {
+			log.Panicf("chatmessage query parameter not provided! Request URL provided was %v", r.URL)
+		}
+
 		func(w http.ResponseWriter, r *http.Request) {
 			log.Printf("chatroomsEP %v", r.Method)
 		}(w, r)
