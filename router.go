@@ -116,19 +116,15 @@ func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 
 		}(w, r)
 
-	case "PUT":
-		// used when a new client changes their display name
-		func(w http.ResponseWriter, r *http.Request) {
-			if displayname != "" {
-				log.Printf("PUT %v FROM usersEP", displayname)
-			} else {
-				log.Printf("PUT %v FROM usersEP", displayname)
-			}
-		}(w, r)
-
 	case "DELETE":
-		// used when a client leaves a room or a room is removed from the server
+		// used when a client changes their name, leaves a room, or a room is removed from the server
 		func(w http.ResponseWriter, r *http.Request) {
+			err := removeUserFromChatroomRedis(ctx, redisClient, displayname, roompath)
+			if err != nil {
+				log.Panicf("Error removing user from chatroom %v", http.StatusInternalServerError)
+			} else {
+				w.WriteHeader(http.StatusOK)
+			}
 			if displayname != "" {
 				log.Printf("DELETE %v FROM usersEP", displayname)
 			} else {

@@ -35,7 +35,7 @@ func connectRedis(context context.Context) *redis.Client {
 
 }
 
-func addUserToChatroomRedis(ctx context.Context, client *redis.Client, displayName, chatroomPath string) error {
+func addUserToChatroomRedis(ctx context.Context, client *redis.Client, displayName string, chatroomPath string) error {
 	_, err := client.SAdd(ctx, "chatroom:"+chatroomPath, displayName).Result()
 	if err != nil {
 		log.Println("Error adding user to chatroom:", err)
@@ -51,13 +51,21 @@ func addUserToChatroomRedis(ctx context.Context, client *redis.Client, displayNa
 // 	return members, nil
 // }
 
-func isUserInChatroomRedis(ctx context.Context, client *redis.Client, displayname, chatroomPath string) (bool, error) {
+func isUserInChatroomRedis(ctx context.Context, client *redis.Client, displayname string, chatroomPath string) (bool, error) {
 	isMember, err := client.SIsMember(ctx, "chatroom:"+chatroomPath, displayname).Result()
 	if err != nil {
 		return false, err
 	}
 
 	return isMember, nil
+}
+
+func removeUserFromChatroomRedis(ctx context.Context, client *redis.Client, displayName string, chatroomPath string) error {
+	_, err := client.SRem(ctx, "chatroom:"+chatroomPath, displayName).Result()
+	if err != nil {
+		log.Println("Error removing user from chatroom:", err)
+	}
+	return err
 }
 
 func connectCockrochDB(context context.Context) *pgx.Conn {

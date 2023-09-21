@@ -120,8 +120,20 @@ async function changeName(conn, usersEP, pagePath) {
     const outputName = document.getElementById('sender');
     const newName = await getNameInput(conn, usersEP, pagePath, outputName.value);
     // TODO
-    // dont update name if already taken
+    // remove from cockroachDB
     if (newName != 'undefined') {
+        const path = pagePath.replace("/chatroom/","");
+        const userQuery = `http://${usersEP}?displayname=${outputName.value}&roompath=${path}`;
+        await fetch(userQuery, {
+            method: "DELETE",
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                chatroom_path: path,
+                display_name: outputName.value
+            })
+        });
         conn.send(`${outputName.value} changed their name to ${newName}`)
         outputName.value = newName;
     } else {
