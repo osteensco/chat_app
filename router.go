@@ -13,14 +13,19 @@ func lobbyEP(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case "GET":
+		// used on new client entering lobby
 		func(w http.ResponseWriter, r *http.Request) {
 			log.Printf("lobbyEP %v", r.Method)
 		}(w, r)
+
 	case "POST":
+		// used when new chatroom is created
 		func(w http.ResponseWriter, r *http.Request) {
 			log.Printf("lobbyEP %v", r.Method)
 		}(w, r)
+
 	case "DELETE":
+		// used when chatroom is removed
 		func(w http.ResponseWriter, r *http.Request) {
 			log.Printf("lobbyEP %v", r.Method)
 		}(w, r)
@@ -32,18 +37,19 @@ func chatroomsEP(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case "GET":
+		//used to get chat history on user entering room
 		func(w http.ResponseWriter, r *http.Request) {
 			log.Printf("chatroomsEP %v", r.Method)
 		}(w, r)
-	case "POST":
-		func(w http.ResponseWriter, r *http.Request) {
-			log.Printf("chatroomsEP %v", r.Method)
-		}(w, r)
+
 	case "PUT":
+		// used to add to chat history
 		func(w http.ResponseWriter, r *http.Request) {
 			log.Printf("chatroomsEP %v", r.Method)
 		}(w, r)
+
 	case "DELETE":
+		// used on chatroom removal
 		func(w http.ResponseWriter, r *http.Request) {
 			log.Printf("chatroomsEP %v", r.Method)
 		}(w, r)
