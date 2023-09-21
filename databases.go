@@ -68,6 +68,24 @@ func removeUserFromChatroomRedis(ctx context.Context, client *redis.Client, disp
 	return err
 }
 
+func changeUserNameRedis(ctx context.Context, client *redis.Client, oldName string, newName string, chatroomPath string) error {
+
+	userExists, err := isUserInChatroomRedis(ctx, client, oldName, chatroomPath)
+
+	if userExists && err != nil {
+		err := removeUserFromChatroomRedis(ctx, client, oldName, chatroomPath)
+		if err != nil {
+			return err
+		} else {
+			err := addUserToChatroomRedis(ctx, client, newName, chatroomPath)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return err
+}
+
 func connectCockrochDB(context context.Context) *pgx.Conn {
 
 	conn, err := pgx.Connect(context, os.Getenv("COCKROACHDB"))

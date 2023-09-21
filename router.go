@@ -72,17 +72,17 @@ func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 	}
 
 	displayname := r.URL.Query().Get("displayname")
-	if roompath == "" {
+	if displayname == "" {
 		log.Panicf("displayname query parameter not provided! Request URL provided was %v", r.URL)
 	}
+
+	log.Printf("%v %v from %v at usersEP", r.Method, displayname, roompath)
 
 	switch r.Method {
 
 	case "GET":
 		// used when a new client enters a room or a clients displayname is changed
 		func(w http.ResponseWriter, r *http.Request) {
-
-			log.Printf("GET %v FROM usersEP", displayname)
 
 			displayNameExists, err := isUserInChatroomRedis(ctx, redisClient, displayname, roompath)
 
@@ -104,10 +104,11 @@ func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 		}(w, r)
 
 	case "POST":
-		// used when a new client enters a room
+		// used when a new client enters a room, or changes their name
 		func(w http.ResponseWriter, r *http.Request) {
 
 			err := addUserToChatroomRedis(ctx, redisClient, displayname, roompath)
+
 			if err != nil {
 				log.Panicf("Error adding user to chatroom %v", http.StatusInternalServerError)
 			} else {
@@ -116,20 +117,37 @@ func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 
 		}(w, r)
 
-	case "DELETE":
-		// used when a client changes their name, leaves a room, or a room is removed from the server
+	case "PUT":
+		// used when a client changes their name
 		func(w http.ResponseWriter, r *http.Request) {
+
+			newname := r.URL.Query().Get("newname")
+			if displayname == "" {
+				log.Panicf("newname query parameter not provided! Request URL provided was %v", r.URL)
+			}
+
+			err := changeUserNameRedis(ctx, redisClient, displayname, newname, roompath)
+
+			if err != nil {
+				log.Panicf("Error changing username %v to %v in chatroom %v", displayname, newname, http.StatusInternalServerError)
+			} else {
+				w.WriteHeader(http.StatusOK)
+			}
+
+		}(w, r)
+
+	case "DELETE":
+		// used when a client leaves a room or a room is removed from the server
+		func(w http.ResponseWriter, r *http.Request) {
+
 			err := removeUserFromChatroomRedis(ctx, redisClient, displayname, roompath)
+
 			if err != nil {
 				log.Panicf("Error removing user from chatroom %v", http.StatusInternalServerError)
 			} else {
 				w.WriteHeader(http.StatusOK)
 			}
-			if displayname != "" {
-				log.Printf("DELETE %v FROM usersEP", displayname)
-			} else {
-				log.Printf("DELETE %v FROM usersEP", displayname)
-			}
+
 		}(w, r)
 
 	}
