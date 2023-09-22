@@ -33,7 +33,7 @@ func lobbyEP(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func chatroomsEP(w http.ResponseWriter, r *http.Request) {
+func chatroomsEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisClient *redis.Client) {
 
 	defer func() {
 		if rec := recover(); rec != nil {
@@ -59,10 +59,32 @@ func chatroomsEP(w http.ResponseWriter, r *http.Request) {
 	case "GET":
 		//used to get chat history on user entering room
 		func(w http.ResponseWriter, r *http.Request) {
-			log.Printf("chatroomsEP %v", r.Method)
+
+			chatMessages, err := getMessageHistoryRedis(ctx, redisClient, roompath)
+
+			if err != nil {
+				log.Panicf("Error querying Redis with roompath %v %v", roompath, http.StatusInternalServerError)
+			} else {
+
+				responsePayload, err := json.Marshal(chatMessages)
+				if err != nil {
+					log.Panicf("Error marshaling chatMessages to JSON: %v", err)
+					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+					return
+				}
+
+				w.Header().Set("Content-Type", "application/json")
+				_, err = w.Write(responsePayload)
+				if err != nil {
+					log.Panicf("Error writing JSON response: %v", err)
+					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+					return
+				}
+			}
+
 		}(w, r)
 
-	case "PUT":
+	case "POST":
 		// used to add to chat history
 
 		chatMessage := r.URL.Query().Get("chatmessage")
@@ -71,13 +93,36 @@ func chatroomsEP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		func(w http.ResponseWriter, r *http.Request) {
-			log.Printf("chatroomsEP %v", r.Method)
+
+			// check length, remove earliest message if applicable
+			length := getMessageHistoryLengthRedis(ctx, redisClient, roompath)
+			if length == 10 {
+				err := removeMessageFromHistoryRedis(ctx, redisClient, roompath)
+				if err != nil {
+					log.Panicf("Error removing message from chatroom history %v", http.StatusInternalServerError)
+				}
+			}
+
+			err := addMessageToHistoryRedis(ctx, redisClient, roompath, chatMessage)
+			if err != nil {
+				log.Panicf("Error adding message to chatroom history %v", http.StatusInternalServerError)
+			} else {
+				w.WriteHeader(http.StatusOK)
+			}
+
 		}(w, r)
 
 	case "DELETE":
 		// used on chatroom removal
 		func(w http.ResponseWriter, r *http.Request) {
-			log.Printf("chatroomsEP %v", r.Method)
+
+			err := deleteKeyRedis(ctx, redisClient, roompath)
+			if err != nil {
+				log.Panicf("Error removing chatroom history for room %v, %v", roompath, http.StatusInternalServerError)
+			} else {
+				w.WriteHeader(http.StatusOK)
+			}
+
 		}(w, r)
 	}
 
@@ -193,7 +238,9 @@ func initAPI(ctx context.Context, redisClient *redis.Client) {
 	// 	room name: xxxxxxx,
 	// 	room path: xxxxxxxxxxxxxxxxx
 	// }
-	http.HandleFunc("/api/chatrooms", chatroomsEP)
+	http.HandleFunc("/api/chatrooms", func(w http.ResponseWriter, r *http.Request) {
+		chatroomsEP(w, r, ctx, redisClient)
+	})
 	// chatrooms: {
 	// 	chatroom path:
 	// 	messages: {

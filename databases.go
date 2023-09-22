@@ -86,37 +86,45 @@ func changeUserNameRedis(ctx context.Context, client *redis.Client, oldName stri
 	return err
 }
 
-// func getMessageHistoryRedis(ctx context.Context, client *redis.Client, chatroomPath string) []string {
-// 	chatMessages, err := client.LRange(ctx, chatroomPath, 0, -1).Result()
-// 	if err != nil {
-// 		log.Println("Error getting message history from chatroom:", err)
-// 	}
-// 	return chatMessages
-// }
+func getMessageHistoryRedis(ctx context.Context, client *redis.Client, chatroomPath string) ([]string, error) {
+	chatMessages, err := client.LRange(ctx, chatroomPath, 0, -1).Result()
+	if err != nil {
+		log.Println("Error getting message history from chatroom:", err)
+	}
+	return chatMessages, err
+}
 
-// func getMessageHistoryLengthRedis(ctx context.Context, client *redis.Client, chatroomPath string) int64 {
-// 	length, err := client.LLen(ctx, chatroomPath).Result()
-// 	if err != nil {
-// 		log.Println("Error getting length of message history from chatroom:", err)
-// 	}
-// 	return length
-// }
+func getMessageHistoryLengthRedis(ctx context.Context, client *redis.Client, chatroomPath string) int64 {
+	length, err := client.LLen(ctx, chatroomPath).Result()
+	if err != nil {
+		log.Println("Error getting length of message history from chatroom:", err)
+	}
+	return length
+}
 
-// func addMessageToHistoryRedis(ctx context.Context, client *redis.Client, chatroomPath string, chatMessage string) error {
-// 	//create a message record interface/struct/json obj
-// 	_, err := client.RPush(ctx, chatroomPath, chatMessage).Result()
-// 	return err
-// }
+func addMessageToHistoryRedis(ctx context.Context, client *redis.Client, chatroomPath string, chatMessage string) error {
+	_, err := client.RPush(ctx, chatroomPath, chatMessage).Result()
+	if err != nil {
+		log.Println("Error adding message to chatroom history:", err)
+	}
+	return err
+}
 
-// func removeMessageFromHistoryRedis(ctx context.Context, client *redis.Client, chatroomPath string) error {
-// 	_, err := client.LPop(ctx, chatroomPath).Result()
-// 	return err
-// }
+func removeMessageFromHistoryRedis(ctx context.Context, client *redis.Client, chatroomPath string) error {
+	_, err := client.LPop(ctx, chatroomPath).Result()
+	if err != nil {
+		log.Println("Error removing message from chatroom: history", err)
+	}
+	return err
+}
 
-// func deleteKeyRedis(ctx context.Context, client *redis.Client, key string) error {
-// 	_, err := client.Del(ctx, key).Result()
-// 	return err
-// }
+func deleteKeyRedis(ctx context.Context, client *redis.Client, key string) error {
+	_, err := client.Del(ctx, key).Result()
+	if err != nil {
+		log.Println("Error deleting message history of chatroom:", err)
+	}
+	return err
+}
 
 func connectCockrochDB(context context.Context) *pgx.Conn {
 
