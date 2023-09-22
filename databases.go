@@ -94,12 +94,12 @@ func getMessageHistoryRedis(ctx context.Context, client *redis.Client, chatroomP
 	return chatMessages, err
 }
 
-func getMessageHistoryLengthRedis(ctx context.Context, client *redis.Client, chatroomPath string) int64 {
+func getMessageHistoryLengthRedis(ctx context.Context, client *redis.Client, chatroomPath string) (int64, error) {
 	length, err := client.LLen(ctx, chatroomPath).Result()
 	if err != nil {
 		log.Println("Error getting length of message history from chatroom:", err)
 	}
-	return length
+	return length, err
 }
 
 func addMessageToHistoryRedis(ctx context.Context, client *redis.Client, chatroomPath string, chatMessage string) error {

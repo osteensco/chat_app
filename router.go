@@ -95,15 +95,17 @@ func chatroomsEP(w http.ResponseWriter, r *http.Request, ctx context.Context, re
 		func(w http.ResponseWriter, r *http.Request) {
 
 			// check length, remove earliest message if applicable
-			length := getMessageHistoryLengthRedis(ctx, redisClient, roompath)
-			if length == 10 {
+			length, err := getMessageHistoryLengthRedis(ctx, redisClient, roompath)
+			if err != nil {
+				log.Panicf("Error message count from chatroom history %v", http.StatusInternalServerError)
+			} else if length == 10 {
 				err := removeMessageFromHistoryRedis(ctx, redisClient, roompath)
 				if err != nil {
 					log.Panicf("Error removing message from chatroom history %v", http.StatusInternalServerError)
 				}
 			}
 
-			err := addMessageToHistoryRedis(ctx, redisClient, roompath, chatMessage)
+			err = addMessageToHistoryRedis(ctx, redisClient, roompath, chatMessage)
 			if err != nil {
 				log.Panicf("Error adding message to chatroom history %v", http.StatusInternalServerError)
 			} else {
