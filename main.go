@@ -40,14 +40,8 @@ func main() {
 //	 - chatroom messages:
 //		 - ${name of client} has diconnected
 //			 - storing names and client cookies required
-//		 - ${old display name} has changed their name to ${new name}
-//			 - storing names and client cookies required
 
-//	 - utilize redis and cockroachDB for persistent storage of state, defining chatroom lifecycle, and chatroom/chat data
-//		 - currently capturing all available chatrooms
-//			 - should store as basic key value pair in Redis
-//		 - capture message history for each chatroom
-//			 - may need to be hash data type in Redis or JSON module if possible with go-redis
-//		 - add a client id and implement cookies for logging and chatroom data
-//			 - clientList may need to be converted to master client list or just for each chatroom (hash)
-//		 - add login and profile page
+//	 - Data Stores API:
+//		 - lobbyEP
+//		 - refactor frontend to better utilize API endpoint methods
+//		 - add cockroachDB functions

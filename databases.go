@@ -113,7 +113,7 @@ func addMessageToHistoryRedis(ctx context.Context, client *redis.Client, chatroo
 func removeMessageFromHistoryRedis(ctx context.Context, client *redis.Client, chatroomPath string) error {
 	_, err := client.LPop(ctx, chatroomPath).Result()
 	if err != nil {
-		log.Println("Error removing message from chatroom: history", err)
+		log.Println("Error removing message from chatroom history:", err)
 	}
 	return err
 }
