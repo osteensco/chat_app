@@ -154,7 +154,7 @@ function sendMessage(conn, message, sender, enteredName) {
     }
     // TODO
     // CREATE or UPDATE record in redis and cockroachDB
-    // /api/chatrooms
+    // /api/messages
 }
 
 function receiveMessage(message) {
@@ -178,7 +178,7 @@ window.onload = async function () {
         // TODO
         // These need to be passed in to a function at somepoint likely, need to finalized API call flow from frontend
         const lobbyEP = pageHost + "/api/lobby";
-        const chatroomsEP = pageHost + "/api/chatrooms";
+        const messagesEP = pageHost + "/api/messages";
         const usersEP = pageHost + "/api/users";
 
         if (pagePath[pagePath.length-1] === "/") {
@@ -200,7 +200,7 @@ window.onload = async function () {
         if (chatmessage) {
             // TODO
             // READ redis and display recent chat messages (last 10? 20?)
-            // /api/chatrooms
+            // /api/messages
             const defaultName = await generateAnon(usersEP, pagePath);
             nameInput.value = defaultName;
             displayname.value = defaultName;

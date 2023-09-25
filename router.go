@@ -33,7 +33,7 @@ func lobbyEP(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func chatroomsEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisClient *redis.Client) {
+func messagesEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisClient *redis.Client) {
 
 	defer func() {
 		if rec := recover(); rec != nil {
@@ -53,7 +53,7 @@ func chatroomsEP(w http.ResponseWriter, r *http.Request, ctx context.Context, re
 		log.Panicf("roompath query parameter not provided! Request URL provided was %v", r.URL)
 	}
 
-	log.Printf("%v message(s) for room %v at chatroomsEP", r.Method, roompath)
+	log.Printf("%v message(s) for room %v at messagesEP", r.Method, roompath)
 
 	switch r.Method {
 	case "GET":
@@ -236,13 +236,15 @@ func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 func initAPI(ctx context.Context, redisClient *redis.Client) {
 
 	http.HandleFunc("/api/lobby", lobbyEP)
+	// Redis HASH
 	// lobby: {
 	// 	room name: xxxxxxx,
 	// 	room path: xxxxxxxxxxxxxxxxx
 	// }
-	http.HandleFunc("/api/chatrooms", func(w http.ResponseWriter, r *http.Request) {
-		chatroomsEP(w, r, ctx, redisClient)
+	http.HandleFunc("/api/messages", func(w http.ResponseWriter, r *http.Request) {
+		messagesEP(w, r, ctx, redisClient)
 	})
+	// Redis LIST
 	// chatrooms: {
 	// 	chatroom path:
 	// 	messages: {
@@ -254,6 +256,7 @@ func initAPI(ctx context.Context, redisClient *redis.Client) {
 	http.HandleFunc("/api/users", func(w http.ResponseWriter, r *http.Request) {
 		usersEP(w, r, ctx, redisClient)
 	})
+	// Redis SET
 	// users: {
 	// 	chatroom path: xxxxxxxxxxxxx,
 	// 	display name: xxxxxx

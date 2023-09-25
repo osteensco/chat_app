@@ -36,7 +36,7 @@ func connectRedis(context context.Context) *redis.Client {
 }
 
 func addUserToChatroomRedis(ctx context.Context, client *redis.Client, displayName string, chatroomPath string) error {
-	_, err := client.SAdd(ctx, "chatroom:"+chatroomPath, displayName).Result()
+	_, err := client.SAdd(ctx, "users_"+chatroomPath, displayName).Result()
 	if err != nil {
 		log.Println("Error adding user to chatroom:", err)
 	}
@@ -52,7 +52,7 @@ func addUserToChatroomRedis(ctx context.Context, client *redis.Client, displayNa
 // }
 
 func isUserInChatroomRedis(ctx context.Context, client *redis.Client, displayname string, chatroomPath string) (bool, error) {
-	isMember, err := client.SIsMember(ctx, "chatroom:"+chatroomPath, displayname).Result()
+	isMember, err := client.SIsMember(ctx, "users_"+chatroomPath, displayname).Result()
 	if err != nil {
 		return false, err
 	}
@@ -61,7 +61,7 @@ func isUserInChatroomRedis(ctx context.Context, client *redis.Client, displaynam
 }
 
 func removeUserFromChatroomRedis(ctx context.Context, client *redis.Client, displayName string, chatroomPath string) error {
-	_, err := client.SRem(ctx, "chatroom:"+chatroomPath, displayName).Result()
+	_, err := client.SRem(ctx, "users_"+chatroomPath, displayName).Result()
 	if err != nil {
 		log.Println("Error removing user from chatroom:", err)
 	}
