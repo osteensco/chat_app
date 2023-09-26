@@ -16,18 +16,21 @@ func lobbyEP(w http.ResponseWriter, r *http.Request) {
 		// used on new client entering lobby
 		func(w http.ResponseWriter, r *http.Request) {
 			log.Printf("lobbyEP %v", r.Method)
+			// getAllChatroomsRedis
 		}(w, r)
 
 	case "POST":
 		// used when new chatroom is created
 		func(w http.ResponseWriter, r *http.Request) {
 			log.Printf("lobbyEP %v", r.Method)
+			// addChatroomToLobbyRedis
 		}(w, r)
 
 	case "DELETE":
 		// used when chatroom is removed
 		func(w http.ResponseWriter, r *http.Request) {
 			log.Printf("lobbyEP %v", r.Method)
+			// removeChatroomFromLobbyRedis
 		}(w, r)
 	}
 

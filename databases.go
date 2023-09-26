@@ -126,6 +126,18 @@ func deleteKeyRedis(ctx context.Context, client *redis.Client, key string) error
 	return err
 }
 
+// func getAllChatroomsRedis() {
+
+// }
+
+// func addChatroomToLobbyRedis() {
+
+// }
+
+// func removeChatroomFromLobbyRedis() {
+
+// }
+
 func connectCockrochDB(context context.Context) *pgx.Conn {
 
 	conn, err := pgx.Connect(context, os.Getenv("COCKROACHDB"))
