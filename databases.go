@@ -126,17 +126,29 @@ func deleteKeyRedis(ctx context.Context, client *redis.Client, key string) error
 	return err
 }
 
-// func getAllChatroomsRedis() {
+func getAllChatroomsRedis(ctx context.Context, client *redis.Client, key string) (map[string]string, error) {
+	rooms, err := client.HGetAll(ctx, key).Result()
+	if err != nil {
+		log.Println("Error getting all chatrooms in lobby:", err)
+	}
+	return rooms, err
+}
 
-// }
+func addChatroomToLobbyRedis(ctx context.Context, client *redis.Client, key string, room SubmittedRoom) error {
+	_, err := client.HSet(ctx, key, room).Result()
+	if err != nil {
+		log.Println("Error adding chatroom to lobby:", err)
+	}
+	return err
+}
 
-// func addChatroomToLobbyRedis() {
-
-// }
-
-// func removeChatroomFromLobbyRedis() {
-
-// }
+func removeChatroomFromLobbyRedis(ctx context.Context, client *redis.Client, key string, roomname string) error {
+	_, err := client.HDel(ctx, key, roomname).Result()
+	if err != nil {
+		log.Println("Error removing chatroom from lobby:", err)
+	}
+	return err
+}
 
 func connectCockrochDB(context context.Context) *pgx.Conn {
 

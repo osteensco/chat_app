@@ -9,28 +9,87 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
-func lobbyEP(w http.ResponseWriter, r *http.Request) {
+func lobbyEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisClient *redis.Client) {
+
+	defer func() {
+		if rec := recover(); rec != nil {
+			log.Println("Recovered from panic:", rec)
+			w.WriteHeader(http.StatusBadRequest)
+			response := map[string]interface{}{
+				"ok":     false,
+				"error":  rec,
+				"status": http.StatusBadRequest,
+			}
+			json.NewEncoder(w).Encode(response)
+		}
+	}()
+
+	roompath := r.URL.Query().Get("roompath")
+	if roompath == "" {
+		log.Panicf("roompath query parameter not provided! Request URL provided was %v", r.URL)
+	}
+
+	roomname := r.URL.Query().Get("roomname")
+	if roomname == "" {
+		log.Panicf("roompath query parameter not provided! Request URL provided was %v", r.URL)
+	}
+
+	key := "lobby"
+
+	log.Printf("%v room %v with path %v at lobbyEP", r.Method, roomname, roompath)
 
 	switch r.Method {
 	case "GET":
 		// used on new client entering lobby
 		func(w http.ResponseWriter, r *http.Request) {
-			log.Printf("lobbyEP %v", r.Method)
-			// getAllChatroomsRedis
+			allChatrooms, err := getAllChatroomsRedis(ctx, redisClient, key)
+
+			if err != nil {
+				log.Panicf("Error getting all chatromms in lobby from Redis %v", roompath, http.StatusInternalServerError)
+			} else {
+
+				responsePayload, err := json.Marshal(allChatrooms)
+				if err != nil {
+					log.Panicf("Error marshaling chatMessages to JSON: %v", err)
+					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+					return
+				}
+
+				w.Header().Set("Content-Type", "application/json")
+				_, err = w.Write(responsePayload)
+				if err != nil {
+					log.Panicf("Error writing JSON response: %v", err)
+					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+					return
+				}
+			}
+
 		}(w, r)
 
 	case "POST":
 		// used when new chatroom is created
 		func(w http.ResponseWriter, r *http.Request) {
-			log.Printf("lobbyEP %v", r.Method)
-			// addChatroomToLobbyRedis
+
+			err := addChatroomToLobbyRedis(ctx, redisClient, key, SubmittedRoom{Name: roomname, Path: roompath})
+			if err != nil {
+				log.Panicf("Error adding chatroom to %v in Redis %v", key, http.StatusInternalServerError)
+			} else {
+				w.WriteHeader(http.StatusOK)
+			}
+
 		}(w, r)
 
 	case "DELETE":
 		// used when chatroom is removed
 		func(w http.ResponseWriter, r *http.Request) {
-			log.Printf("lobbyEP %v", r.Method)
-			// removeChatroomFromLobbyRedis
+
+			err := removeChatroomFromLobbyRedis(ctx, redisClient, key, roomname)
+			if err != nil {
+				log.Panicf("Error removing chatroom from %v in Redis %v", key, http.StatusInternalServerError)
+			} else {
+				w.WriteHeader(http.StatusOK)
+			}
+
 		}(w, r)
 	}
 
@@ -238,7 +297,9 @@ func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 
 func initAPI(ctx context.Context, redisClient *redis.Client) {
 
-	http.HandleFunc("/api/lobby", lobbyEP)
+	http.HandleFunc("/api/lobby", func(w http.ResponseWriter, r *http.Request) {
+		lobbyEP(w, r, ctx, redisClient)
+	})
 	// Redis HASH
 	// lobby: {
 	// 	room name: xxxxxxx,
