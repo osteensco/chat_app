@@ -45,7 +45,7 @@ func lobbyEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 			allChatrooms, err := getAllChatroomsRedis(ctx, redisClient, key)
 
 			if err != nil {
-				log.Panicf("Error getting all chatromms in lobby from Redis %v", roompath, http.StatusInternalServerError)
+				log.Panicf("Error getting all chatromms in %v from Redis %v", roompath, http.StatusInternalServerError)
 			} else {
 
 				responsePayload, err := json.Marshal(allChatrooms)
