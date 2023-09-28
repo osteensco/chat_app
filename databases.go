@@ -72,7 +72,7 @@ func changeUserNameRedis(ctx context.Context, client *redis.Client, oldName stri
 
 	userExists, err := isUserInChatroomRedis(ctx, client, oldName, chatroomPath)
 
-	if userExists && err != nil {
+	if userExists && err == nil {
 		err := removeUserFromChatroomRedis(ctx, client, oldName, chatroomPath)
 		if err != nil {
 			return err
@@ -82,8 +82,12 @@ func changeUserNameRedis(ctx context.Context, client *redis.Client, oldName stri
 				return err
 			}
 		}
+	} else if !userExists {
+		log.Panicf("%v not found in Redis db", oldName)
 	}
+
 	return err
+
 }
 
 func getMessageHistoryRedis(ctx context.Context, client *redis.Client, chatroomPath string) ([]string, error) {

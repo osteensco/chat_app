@@ -222,7 +222,7 @@ func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 	switch r.Method {
 
 	case "GET":
-		// used when a new client enters a room or a clients displayname is changed
+		// used when a new client is being assigned an anonymous display name
 		func(w http.ResponseWriter, r *http.Request) {
 
 			displayNameExists, err := isUserInChatroomRedis(ctx, redisClient, displayname, roompath)
@@ -245,7 +245,7 @@ func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 		}(w, r)
 
 	case "POST":
-		// used when a new client enters a room, or changes their name
+		// used when a new client enters a room
 		func(w http.ResponseWriter, r *http.Request) {
 
 			err := addUserToChatroomRedis(ctx, redisClient, displayname, roompath)
@@ -263,9 +263,11 @@ func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 		func(w http.ResponseWriter, r *http.Request) {
 
 			newname := r.URL.Query().Get("newname")
-			if displayname == "" {
+			if newname == "" {
 				log.Panicf("newname query parameter not provided! Request URL provided was %v", r.URL)
 			}
+
+			log.Printf("changing name from %v to %v in %v", displayname, newname, roompath)
 
 			err := changeUserNameRedis(ctx, redisClient, displayname, newname, roompath)
 

@@ -27,6 +27,8 @@ async function generateAnon(usersEP, pagePath) {
         generateAnon(usersEP, pagePath);
     }, pagePath, usersEP, anon);
 
+    addDisplayNameToRoom(pagePath, usersEP, anon);
+
     return anon
 
     }
@@ -41,24 +43,43 @@ async function checkDisplayNameAvailability(callback, pagePath, usersEP, display
 
     if (!response.ok) {
         console.log(`${displayname} display name available to register in ${path}`);
-        // TODO: Add additional logic
-        // CREATE record in cockroachDB
-
-        await fetch(userQuery, {
-            method: "POST",
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                chatroom_path: path,
-                display_name: displayname
-            })
-        });
         return displayname;
     } else {
         console.log(`${displayname} display name already registered in ${path}`);
         callback();
     }
+
+}
+
+async function addDisplayNameToRoom(pagePath, usersEP, displayname) {
+
+    const path = pagePath.replace("/chatroom/","");
+    const userQuery = `http://${usersEP}?displayname=${displayname}&roompath=${path}`;
+
+    const response = await fetch(userQuery, {
+        method: "POST",
+        headers: {
+            'Content-Type': 'application/json'
+        },
+    });
+
+    console.log(`${response.status} ${response.statusText}`);
+
+}
+
+async function removeDisplayNameFromRoom(pagePath, usersEP, displayname) {
+
+    const path = pagePath.replace("/chatroom/","");
+    const userQuery = `http://${usersEP}?displayname=${displayname}&roompath=${path}`;
+
+    const response = await fetch(userQuery, {
+        method: "DELETE",
+        headers: {
+            'Content-Type': 'application/json'
+        },
+    });
+
+    console.log(`${response.status} ${response.statusText}`);
 
 }
 
@@ -117,24 +138,20 @@ async function getNameInput(conn, usersEP, pagePath) {
 }
 
 async function changeName(conn, usersEP, pagePath) {
+
     const outputName = document.getElementById('sender');
     const newName = await getNameInput(conn, usersEP, pagePath, outputName.value);
-    // TODO
-    // remove from cockroachDB
+
     if (newName != 'undefined') {
         const path = pagePath.replace("/chatroom/","");
-        const userQuery = `http://${usersEP}?displayname=${outputName.value}&roompath=${path}`;
+        const userQuery = `http://${usersEP}?displayname=${outputName.value}&roompath=${path}&newname=${newName}`;
         await fetch(userQuery, {
-            method: "DELETE",
+            method: "PUT",
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                chatroom_path: path,
-                display_name: outputName.value
-            })
         });
-        conn.send(`${outputName.value} changed their name to ${newName}`)
+        conn.send(`${outputName.value} changed their name to ${newName}`);
         outputName.value = newName;
     } else {
         let nameInput = document.getElementById('nameInput');
@@ -204,9 +221,13 @@ window.onload = async function () {
             const defaultName = await generateAnon(usersEP, pagePath);
             nameInput.value = defaultName;
             displayname.value = defaultName;
+
+            window.onunload = async () => {
+                await removeDisplayNameFromRoom(pagePath, usersEP, displayname.value);
+            };
             
             conn.onopen = () => {
-                conn.send(`${displayname.value} has entered the chat`)
+                conn.send(`${displayname.value} has entered the chat`);
             };
             nameInputButton.onclick = async () => {
                 await changeName(conn, usersEP, pagePath);
@@ -242,3 +263,4 @@ window.onload = async function () {
         alert("Websockets not supported by browser!");
     }
 };
+

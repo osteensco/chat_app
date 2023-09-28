@@ -42,6 +42,5 @@ func main() {
 //			 - storing names and client cookies required
 
 //	 - Data Stores API:
-//		 - lobbyEP
 //		 - refactor frontend to better utilize API endpoint methods
 //		 - add cockroachDB functions
