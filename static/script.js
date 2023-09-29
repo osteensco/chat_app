@@ -208,20 +208,29 @@ async function changeName(conn, usersEP, pagePath) {
 
   }
 
-function sendMessage(conn, message, sender, enteredName) {
+async function sendMessage(messagesEP, conn, message, sender, enteredName, roompath) {
+
     if (sender.value != enteredName.value) {
         enteredName.value = sender.value
     }
     if (message != null) {
-        conn.send(`${sender.value}: ${message.value}`);
+        const messageString = `${sender.value}: ${message.value}`;
+        conn.send(messageString);
         message.value = "";
+        const path = roompath.replace("/chatroom/","");
+        const messageQuery = `http://${messagesEP}?roompath=${path}&chatmessage=${messageString}`;
+        await fetch(messageQuery, {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json'
+            },
+        });
     }
-    // TODO
-    // CREATE or UPDATE record in redis and cockroachDB
-    // /api/messages
+
 }
 
 function receiveMessage(message) {
+
     let chatbox = document.getElementById("chatmessages");
     console.log(message);
     const newMessage = message.data;
@@ -230,7 +239,16 @@ function receiveMessage(message) {
 
 }
 
-window.onload = async function () {
+async function populateMessages(messagesEP, roompath) {
+
+    const path = roompath.replace("/chatroom/","");
+    const messageQuery = `http://${messagesEP}?roompath=${path}`;
+    response = await fetch(messageQuery);
+    console.log(await response.json())
+
+}
+
+window.onload = async () => {
 
     if (window["WebSocket"]) {
         console.log("browser websocket support found");
@@ -239,8 +257,6 @@ window.onload = async function () {
         let pagePath = window.location.pathname === undefined ? "/" : window.location.pathname;
         let socketURL;
 
-        // TODO
-        // These need to be passed in to a function at somepoint likely, need to finalized API call flow from frontend
         const lobbyEP = pageHost + "/api/lobby";
         const messagesEP = pageHost + "/api/messages";
         const usersEP = pageHost + "/api/users";
@@ -262,9 +278,7 @@ window.onload = async function () {
         
 
         if (chatmessage) {
-            // TODO
-            // READ redis and display recent chat messages (last 10? 20?)
-            // /api/messages
+            await populateMessages(messagesEP, pagePath);
             const defaultName = await generateAnon(usersEP, pagePath);
             nameInput.value = defaultName;
             displayname.value = defaultName;
@@ -281,7 +295,7 @@ window.onload = async function () {
             };
             chatmessage.onsubmit = (event) => {  
                 event.preventDefault();
-                sendMessage(conn, newmessage, displayname, nameInput);
+                sendMessage(messagesEP, conn, newmessage, displayname, nameInput, pagePath);
             };
             conn.onmessage = (message) => {
                 if (message.data != "client disconnect") {
