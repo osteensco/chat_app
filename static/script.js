@@ -112,12 +112,12 @@ async function createChatroom(lobbyEP, conn) {
             const message = {data: `{"chatroom": {"name": "${roomname}", "path": "${roompath}"}}`}
             await addRoomToLobbyDB(lobbyEP, message);
             conn.send(`${message.data}`);
-            roomname.value = "";
+            roomname = "";
 
         } else {
             const message = `${roomname} room name already registered in lobby`
             console.log(message);
-            roomname.value = ""
+            roomname = ""
             alert(message);
         }
 
