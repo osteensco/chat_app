@@ -124,7 +124,29 @@ function navToChatroom() {
 
 }
 
+async function getLobbyChatrooms(lobbyEP) {
 
+    const lobbyQuery = `http://${lobbyEP}?roomname=*&roompath=*`;
+    const response = await fetch(lobbyQuery);
+    console.log(`${response.status} ${response.statusText}`);
+    const payload = response.json()
+    console.log()
+    return payload
+
+}
+
+async function addRoomToLobbyDB(lobbyEP, message) {
+    const roominfo = JSON.parse(message.data);
+    const roompath = roominfo.chatroom.path;
+    const roomname = roominfo.chatroom.name;
+    const lobbyQuery = `http://${lobbyEP}?roomname=${roomname}&roompath=${roompath}`;
+    await fetch(lobbyQuery, {
+        method: "POST",
+        headers: {
+            'Content-Type': 'application/json'
+        },
+    });
+}
 
 async function getNameInput(conn, usersEP, pagePath) {
     let nameInput = document.getElementById('nameInput');
@@ -244,15 +266,19 @@ window.onload = async function () {
         }
 
         if (createroom) {
-            // TODO
-            // READ redis and display current available chatrooms
-            // /api/lobby
+            const rooms = await getLobbyChatrooms(lobbyEP)
+            for (const k in rooms) {
+                const room = {data: `{"chatroom": {"name": "${k}", "path": ${rooms[k]}}}`}
+                updateRoomList(room)
+            }
+            
             createroom.onsubmit = (event) => {
                 event.preventDefault();
                 createChatroom(conn);
             };
             conn.onmessage = (message) => {
                 if (message.data != "client disconnect") {
+                    addRoomToLobbyDB(lobbyEP,message);
                     updateRoomList(message);
                 }
             };

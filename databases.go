@@ -138,7 +138,7 @@ func getAllChatroomsRedis(ctx context.Context, client *redis.Client, key string)
 	return rooms, err
 }
 
-func addChatroomToLobbyRedis(ctx context.Context, client *redis.Client, key string, room SubmittedRoom) error {
+func addChatroomToLobbyRedis(ctx context.Context, client *redis.Client, key string, room map[string]interface{}) error {
 	_, err := client.HSet(ctx, key, room).Result()
 	if err != nil {
 		log.Println("Error adding chatroom to lobby:", err)

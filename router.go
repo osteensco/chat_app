@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -70,7 +71,13 @@ func lobbyEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 		// used when new chatroom is created
 		func(w http.ResponseWriter, r *http.Request) {
 
-			err := addChatroomToLobbyRedis(ctx, redisClient, key, SubmittedRoom{Name: roomname, Path: roompath})
+			jsonroompath, err := json.Marshal(roompath)
+			if err != nil {
+				log.Panicf("error marchaling JSON: %v", err)
+			}
+
+			room := map[string]interface{}{roomname: fmt.Sprintf("%v", string(jsonroompath))}
+			err = addChatroomToLobbyRedis(ctx, redisClient, key, room)
 			if err != nil {
 				log.Panicf("Error adding chatroom to %v in Redis %v", key, http.StatusInternalServerError)
 			} else {

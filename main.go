@@ -43,4 +43,5 @@ func main() {
 
 //	 - Data Stores API:
 //		 - refactor frontend to better utilize API endpoint methods
+//		 - add logic to delete chatrooms when empty for a period of time
 //		 - add cockroachDB functions
