@@ -95,12 +95,11 @@ async function createChatroom(lobbyEP, conn) {
         const response = await fetch(lobbyQuery);
         console.log(`${response.status} ${response.statusText}`);
 
-        console.log(response)
+
         const existingrooms = await response.json();
         const existingnames = Object.keys(existingrooms);
         const existingpaths = Object.values(existingrooms);
         console.log(existingrooms)
-        console.log(existingnames)
 
         if (!response.ok || !existingnames.includes(roomname)) {
 
