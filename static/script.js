@@ -83,21 +83,47 @@ async function removeDisplayNameFromRoom(pagePath, usersEP, displayname) {
 
 }
 
-function createChatroom(conn) {
+async function createChatroom(lobbyEP, conn) {
 
     let roomname = document.getElementById("roomname").value;
     
     roomname.trim();
 
     if (roomname != "") {
-        let roompath = getRandomString();
-        //TODO
-        // READ record in redis to make sure roomname and/or roompath doesn't already exist
-        // /api/lobby
-        conn.send(`{"chatroom": {"name": "${roomname}", "path": "${roompath}"}}`)
-        // CREATE record in redis and cockroachDB
-        roomname.value = ""
+        
+        const lobbyQuery = `http://${lobbyEP}?roomname=*&roompath=*`
+        const response = await fetch(lobbyQuery);
+        console.log(`${response.status} ${response.statusText}`);
+
+        console.log(response)
+        const existingrooms = await response.json();
+        const existingnames = Object.keys(existingrooms);
+        const existingpaths = Object.values(existingrooms);
+        console.log(existingrooms)
+        console.log(existingnames)
+
+        if (!response.ok || !existingnames.includes(roomname)) {
+
+            console.log(`${roomname} room name available to register in lobby`);
+            let roompath;
+            do {
+                roompath = getRandomString();
+            } while (existingpaths.includes(roompath));
+
+            const message = {data: `{"chatroom": {"name": "${roomname}", "path": "${roompath}"}}`}
+            await addRoomToLobbyDB(lobbyEP, message);
+            conn.send(`${message.data}`);
+            roomname.value = "";
+
+        } else {
+            const message = `${roomname} room name already registered in lobby`
+            console.log(message);
+            roomname.value = ""
+            alert(message);
+        }
+
     }
+
 }
 
 function updateRoomList(message) {
@@ -130,7 +156,7 @@ async function getLobbyChatrooms(lobbyEP) {
     const response = await fetch(lobbyQuery);
     console.log(`${response.status} ${response.statusText}`);
     const payload = response.json()
-    console.log()
+
     return payload
 
 }
@@ -267,6 +293,7 @@ window.onload = async function () {
 
         if (createroom) {
             const rooms = await getLobbyChatrooms(lobbyEP)
+            console.log(rooms)
             for (const k in rooms) {
                 const room = {data: `{"chatroom": {"name": "${k}", "path": ${rooms[k]}}}`}
                 updateRoomList(room)
@@ -274,11 +301,10 @@ window.onload = async function () {
             
             createroom.onsubmit = (event) => {
                 event.preventDefault();
-                createChatroom(conn);
+                createChatroom(lobbyEP, conn);
             };
             conn.onmessage = (message) => {
                 if (message.data != "client disconnect") {
-                    addRoomToLobbyDB(lobbyEP,message);
                     updateRoomList(message);
                 }
             };

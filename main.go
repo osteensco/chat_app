@@ -42,6 +42,7 @@ func main() {
 //			 - storing names and client cookies required
 
 //	 - Data Stores API:
+//		 - on app load register existing chatrooms from DB
 //		 - refactor frontend to better utilize API endpoint methods
 //		 - add logic to delete chatrooms when empty for a period of time
 //		 - add cockroachDB functions
