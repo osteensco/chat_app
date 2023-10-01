@@ -38,13 +38,13 @@ func main() {
 
 // add features
 //	 - chatroom messages:
-//		 - ${name of client} has diconnected
-//			 - storing names and client cookies required
+//		 -  ${userName} has entered the room
+//		 - ${userName} has left the room
+//			 - cookies necessary?
 
 //	 - Data Stores API:
 //		 - changeName messages need to POST to DB
-//		 - recent messages need to be parsed by FE on chatroom load
 //		 - on app load register existing chatrooms from DB
-//		 - refactor frontend to better utilize API endpoint methods
 //		 - add logic to delete chatrooms when empty for a period of time
+//			 - as well as other cleanup functions for disconnections, etc
 //		 - add cockroachDB functions

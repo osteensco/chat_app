@@ -244,7 +244,12 @@ async function populateMessages(messagesEP, roompath) {
     const path = roompath.replace("/chatroom/","");
     const messageQuery = `http://${messagesEP}?roompath=${path}`;
     response = await fetch(messageQuery);
-    console.log(await response.json())
+    const messages = await response.json();
+    console.log(messages);
+    messages.forEach(messagestr => {
+        const message = {data: messagestr};
+        receiveMessage(message);
+    });
 
 }
 
