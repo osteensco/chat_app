@@ -43,7 +43,8 @@ func main() {
 }
 
 // TODO
+//	 - add cockroachDB functions
 
 // bugs
-//		- 404 error on cached chatrooms
-//		- messages aren't displaying
+//	- 404 error on cached chatrooms
+//	- messages aren't displaying
