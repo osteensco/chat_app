@@ -45,19 +45,5 @@ func main() {
 // TODO
 
 // bugs
-
-// add features
-//	 - chatroom messages:
-//		 -  ${userName} has entered the room
-//		 - ${userName} has left the room
-//			 - cookies necessary?
-//		* on client disconnect message, parse payload and grab displayname in backend
-//			-need to send displayname on disconnect from FE
-//		* read message on FE for other clients
-//		* store in DB
-
-//	 - Data Stores API:
-
-//		 - add logic to delete chatrooms when empty for a period of time
-//			 - as well as other cleanup functions for disconnections, messages when room doesn't exist, etc
-//		 - add cockroachDB functions
+//		- 404 error on cached chatrooms
+//		- messages aren't displaying
