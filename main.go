@@ -43,6 +43,10 @@ func main() {
 }
 
 // TODO
+//	 - ${userName} has entered chatroom message
+//	 - ${userName} has left chatroom message
+//	 - remove chatrooms and messages from DB after 10 min of inactivity
+//		 - use go routine chatroom method to start a timer when clientList becomes empty
 //	 - add cockroachDB functions
 
 // bugs
