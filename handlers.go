@@ -13,8 +13,10 @@ func chatroomPathHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("requested chatroom for %v", roomPath)
 
 	room, ok := AllRooms[roomPath]
+	log.Println(AllRooms)
+
 	if !ok {
-		log.Println(AllRooms)
+
 		log.Printf("404 error: room path %v not found", roomPath)
 		http.NotFound(w, r)
 		return

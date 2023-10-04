@@ -31,8 +31,11 @@ func main() {
 	}
 
 	for key, val := range chatrooms {
+		log.Println(val)
+		val = val[1 : len(val)-1]
 		room := NewChatroom(key, val)
 		AllRooms[val] = room
+		log.Println(val)
 	}
 
 	err = http.ListenAndServe(":8080", nil)
@@ -50,5 +53,3 @@ func main() {
 //	 - add cockroachDB functions
 
 // bugs
-//	- 404 error on cached chatrooms
-//	- messages aren't displaying
