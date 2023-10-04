@@ -205,7 +205,6 @@ async function changeName(conn, usersEP, pagePath) {
         nameInput.value = outputName.value
     }
 
-
   }
 
 async function sendMessage(messagesEP, conn, message, sender, enteredName, roompath) {
@@ -226,6 +225,21 @@ async function sendMessage(messagesEP, conn, message, sender, enteredName, roomp
             },
         });
     }
+
+}
+
+async function roomEntranceMessage(messagesEP, conn, displayname, roompath) {
+    
+    const messageString = `${displayname} has entered the chat`
+    const path = roompath.replace("/chatroom/","");
+    const messageQuery = `http://${messagesEP}?roompath=${path}&chatmessage=${messageString}`;
+    await fetch(messageQuery, {
+        method: "POST",
+        headers: {
+            'Content-Type': 'application/json'
+        },
+    });
+    conn.send(messageString);
 
 }
 
@@ -287,14 +301,12 @@ window.onload = async () => {
             const defaultName = await generateAnon(usersEP, pagePath);
             nameInput.value = defaultName;
             displayname.value = defaultName;
+            roomEntranceMessage(messagesEP, conn, displayname.value, pagePath);
 
             window.onunload = async () => {
                 await removeDisplayNameFromRoom(pagePath, usersEP, displayname.value);
             };
             
-            conn.onopen = () => {
-                conn.send(`${displayname.value} has entered the chat`);
-            };
             nameInputButton.onclick = async () => {
                 await changeName(conn, usersEP, pagePath);
             };
