@@ -207,6 +207,17 @@ async function changeName(conn, usersEP, pagePath) {
 
   }
 
+async function logMessageToDB(messagesEP, roompath, messageString) {
+    const path = roompath.replace("/chatroom/","");
+    const messageQuery = `http://${messagesEP}?roompath=${path}&chatmessage=${messageString}`;
+    await fetch(messageQuery, {
+        method: "POST",
+        headers: {
+            'Content-Type': 'application/json'
+        },
+    });
+}
+
 async function sendMessage(messagesEP, conn, message, sender, enteredName, roompath) {
 
     if (sender.value != enteredName.value) {
@@ -216,14 +227,7 @@ async function sendMessage(messagesEP, conn, message, sender, enteredName, roomp
         const messageString = `${sender.value}: ${message.value}`;
         conn.send(messageString);
         message.value = "";
-        const path = roompath.replace("/chatroom/","");
-        const messageQuery = `http://${messagesEP}?roompath=${path}&chatmessage=${messageString}`;
-        await fetch(messageQuery, {
-            method: "POST",
-            headers: {
-                'Content-Type': 'application/json'
-            },
-        });
+        await logMessageToDB(messagesEP, roompath, messageString)
     }
 
 }
@@ -231,15 +235,16 @@ async function sendMessage(messagesEP, conn, message, sender, enteredName, roomp
 async function roomEntranceMessage(messagesEP, conn, displayname, roompath) {
     
     const messageString = `${displayname} has entered the chat`
-    const path = roompath.replace("/chatroom/","");
-    const messageQuery = `http://${messagesEP}?roompath=${path}&chatmessage=${messageString}`;
-    await fetch(messageQuery, {
-        method: "POST",
-        headers: {
-            'Content-Type': 'application/json'
-        },
-    });
+    await logMessageToDB(messagesEP, roompath, messageString)
     conn.send(messageString);
+
+}
+
+async function roomExitMessage(messagesEP, conn, displayname, roompath) {
+
+    const messageString = `${displayname} has left the room`
+    conn.send(messageString)
+    await logMessageToDB(messagesEP, roompath, messageString)
 
 }
 
@@ -302,6 +307,11 @@ window.onload = async () => {
             nameInput.value = defaultName;
             displayname.value = defaultName;
             roomEntranceMessage(messagesEP, conn, displayname.value, pagePath);
+
+            window.onbeforeunload = async (event) => {
+                event.preventDefault();
+                await roomExitMessage(messagesEP, conn, displayname.value, pagePath);
+            };
 
             window.onunload = async () => {
                 await removeDisplayNameFromRoom(pagePath, usersEP, displayname.value);
