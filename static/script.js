@@ -308,12 +308,8 @@ window.onload = async () => {
             displayname.value = defaultName;
             roomEntranceMessage(messagesEP, conn, displayname.value, pagePath);
 
-            window.onbeforeunload = async (event) => {
-                event.preventDefault();
-                await roomExitMessage(messagesEP, conn, displayname.value, pagePath);
-            };
-
             window.onunload = async () => {
+                await roomExitMessage(messagesEP, conn, displayname.value, pagePath);
                 await removeDisplayNameFromRoom(pagePath, usersEP, displayname.value);
             };
             

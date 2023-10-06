@@ -51,5 +51,3 @@ func main() {
 //	 - add cockroachDB functions
 
 // bugs
-
-//	 - unsaved changes dialog box shows when trying to navigate away from chatroom
