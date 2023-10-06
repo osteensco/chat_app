@@ -123,7 +123,7 @@ func removeMessageFromHistoryRedis(ctx context.Context, client *redis.Client, ch
 }
 
 func deleteKeyRedis(ctx context.Context, client *redis.Client, key string) error {
-	_, err := client.Del(ctx, key).Result()
+	_, err := client.Del(ctx, "messages_"+key).Result()
 	if err != nil {
 		log.Println("Error deleting message history of chatroom:", err)
 	}

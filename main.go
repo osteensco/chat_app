@@ -31,14 +31,15 @@ func main() {
 	}
 
 	for key, val := range chatrooms {
-		log.Println(val)
 		val = val[1 : len(val)-1]
 		room := NewChatroom(key, val)
 		AllRooms[val] = room
-		log.Println(val)
+		log.Printf("%v: %v", key, val)
 	}
 
-	err = http.ListenAndServe(":8080", nil)
+	go monitorRoomActivity(&AllRooms)
+
+	err = http.ListenAndServe(":"+Port, nil)
 	if err != nil {
 		log.Fatal("Error starting server:", err)
 	}
@@ -47,8 +48,8 @@ func main() {
 
 // TODO
 
-//	 - remove chatrooms and messages from DB after 10 min of inactivity
-//		 - use go routine chatroom method to start a timer when clientList becomes empty
 //	 - add cockroachDB functions
 
 // bugs
+
+//	 - unsaved changes dialog box shows when trying to navigate away from chatroom

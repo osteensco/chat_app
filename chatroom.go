@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -88,6 +89,31 @@ func (cr *Chatroom) handleConnections(w http.ResponseWriter, r *http.Request) {
 	cr.registerClient(client)
 
 	client.handleMessages()
+
+}
+
+func (cr *Chatroom) startRemovalTimer() {
+
+	startTime := time.Now()
+	timer := time.NewTimer(1 * time.Minute)
+
+	for {
+		<-timer.C
+		if len(cr.clients) != 0 {
+			timer.Stop()
+			return
+		} else {
+			if time.Since(startTime) >= 1*time.Minute {
+
+				timer.Stop()
+
+				delete(AllRooms, cr.Path)
+				sendRemoveFromLobbyRequest(cr)
+				sendRemoveMessagesRequest(cr)
+			}
+		}
+
+	}
 
 }
 

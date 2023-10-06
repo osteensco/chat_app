@@ -30,6 +30,7 @@ func lobbyEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 		log.Panicf("roompath query parameter not provided! Request URL provided was %v", r.URL)
 	}
 
+	// roomname := strings.ReplaceAll(r.URL.Query().Get("roomname"), " ", "%20")
 	roomname := r.URL.Query().Get("roomname")
 	if roomname == "" {
 		log.Panicf("roompath query parameter not provided! Request URL provided was %v", r.URL)
