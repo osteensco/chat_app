@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/go-redis/redis/v8"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func lobbyEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisClient *redis.Client) {
@@ -200,7 +201,7 @@ func messagesEP(w http.ResponseWriter, r *http.Request, ctx context.Context, red
 
 }
 
-func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisClient *redis.Client) {
+func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisClient *redis.Client, CRDBClient *pgxpool.Pool) {
 
 	defer func() {
 		if rec := recover(); rec != nil {
@@ -258,8 +259,12 @@ func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 
 			err := addUserToChatroomRedis(ctx, redisClient, displayname, roompath)
 
+			if err == nil {
+				err = addUserToChatroomCRDB(ctx, CRDBClient, displayname, roompath)
+			}
+
 			if err != nil {
-				log.Panicf("Error adding user to chatroom %v", http.StatusInternalServerError)
+				log.Panicf("Error adding user to chatroom %v, %v", http.StatusInternalServerError, err)
 			} else {
 				w.WriteHeader(http.StatusOK)
 			}
@@ -305,7 +310,7 @@ func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 
 }
 
-func initAPI(ctx context.Context, redisClient *redis.Client) {
+func initAPI(ctx context.Context, redisClient *redis.Client, CRDBClient *pgxpool.Pool) {
 
 	http.HandleFunc("/api/lobby", func(w http.ResponseWriter, r *http.Request) {
 		lobbyEP(w, r, ctx, redisClient)
@@ -328,7 +333,7 @@ func initAPI(ctx context.Context, redisClient *redis.Client) {
 	// 	}
 	// }
 	http.HandleFunc("/api/users", func(w http.ResponseWriter, r *http.Request) {
-		usersEP(w, r, ctx, redisClient)
+		usersEP(w, r, ctx, redisClient, CRDBClient)
 	})
 	// Redis SET
 	// users: {

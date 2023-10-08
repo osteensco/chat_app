@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/go-redis/redis/v8"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func connectRedis(context context.Context) *redis.Client {
@@ -146,9 +146,9 @@ func removeChatroomFromLobbyRedis(ctx context.Context, client *redis.Client, key
 	return err
 }
 
-func connectCockrochDB(context context.Context) *pgx.Conn {
+func connectCockrochDB(context context.Context) *pgxpool.Pool {
 
-	conn, err := pgx.Connect(context, os.Getenv("COCKROACHDB"))
+	conn, err := pgxpool.New(context, os.Getenv("COCKROACHDB"))
 	if err != nil {
 		log.Fatal(err)
 	} else {
@@ -158,15 +158,26 @@ func connectCockrochDB(context context.Context) *pgx.Conn {
 
 }
 
-// func addUserToChatroomCRDB(ctx context.Context, client *pgx.Conn, displayName string, chatroomPath string) error {
-// 	_, err := client.SAdd(ctx, "users_"+chatroomPath, displayName).Result()
-// 	if err != nil {
-// 		log.Println("Error adding user to chatroom:", err)
-// 	}
-// 	return err
-// }
+func createTableIfNotExistsCRDB(ctx context.Context, client *pgxpool.Pool, tblName string, tblSchema string) {
+	_, err := client.Query(ctx, "CREATE TABLE IF NOT EXISTS "+tblName+" "+tblSchema)
+	if err != nil {
+		log.Println(err)
+	}
+}
 
-// func isUserInChatroomCRDB(ctx context.Context, client *pgx.Conn, displayname string, chatroomPath string) (bool, error) {
+func addUserToChatroomCRDB(ctx context.Context, client *pgxpool.Pool, displayName string, chatroomPath string) error {
+
+	createTableIfNotExistsCRDB(ctx, client, "users", "(chatroompath STRING, displayname STRING)")
+
+	_, err := client.Query(ctx, "INSERT INTO users (chatroompath, displayname) VALUES ($1, $2)", chatroomPath, displayName)
+	if err != nil {
+		log.Println("Error adding user to chatroom:", err)
+	}
+	return err
+
+}
+
+// func isUserInChatroomCRDB(ctx context.Context, client *pgxpool.Pool, displayname string, chatroomPath string) (bool, error) {
 // 	isMember, err := client.SIsMember(ctx, "users_"+chatroomPath, displayname).Result()
 // 	if err != nil {
 // 		return false, err
@@ -175,7 +186,7 @@ func connectCockrochDB(context context.Context) *pgx.Conn {
 // 	return isMember, nil
 // }
 
-// func removeUserFromChatroomCRDB(ctx context.Context, client *pgx.Conn, displayName string, chatroomPath string) error {
+// func removeUserFromChatroomCRDB(ctx context.Context, client *pgxpool.Pool, displayName string, chatroomPath string) error {
 // 	_, err := client.SRem(ctx, "users_"+chatroomPath, displayName).Result()
 // 	if err != nil {
 // 		log.Println("Error removing user from chatroom:", err)
@@ -183,7 +194,7 @@ func connectCockrochDB(context context.Context) *pgx.Conn {
 // 	return err
 // }
 
-// func changeUserNameCRDB(ctx context.Context, client *pgx.Conn, oldName string, newName string, chatroomPath string) error {
+// func changeUserNameCRDB(ctx context.Context, client *pgxpool.Pool, oldName string, newName string, chatroomPath string) error {
 
 // 	userExists, err := isUserInChatroomRedis(ctx, client, oldName, chatroomPath)
 
@@ -205,7 +216,7 @@ func connectCockrochDB(context context.Context) *pgx.Conn {
 
 // }
 
-// func getMessageHistoryCRDB(ctx context.Context, client *pgx.Conn, chatroomPath string) ([]string, error) {
+// func getMessageHistoryCRDB(ctx context.Context, client *pgxpool.Pool, chatroomPath string) ([]string, error) {
 // 	chatMessages, err := client.LRange(ctx, "messages_"+chatroomPath, 0, -1).Result()
 // 	if err != nil {
 // 		log.Println("Error getting message history from chatroom:", err)
@@ -213,7 +224,7 @@ func connectCockrochDB(context context.Context) *pgx.Conn {
 // 	return chatMessages, err
 // }
 
-// func getMessageHistoryLengthCRDB(ctx context.Context, client *pgx.Conn, chatroomPath string) (int64, error) {
+// func getMessageHistoryLengthCRDB(ctx context.Context, client *pgxpool.Pool, chatroomPath string) (int64, error) {
 // 	length, err := client.LLen(ctx, "messages_"+chatroomPath).Result()
 // 	if err != nil {
 // 		log.Println("Error getting length of message history from chatroom:", err)
@@ -221,7 +232,7 @@ func connectCockrochDB(context context.Context) *pgx.Conn {
 // 	return length, err
 // }
 
-// func addMessageToHistoryCRDB(ctx context.Context, client *pgx.Conn, chatroomPath string, chatMessage string) error {
+// func addMessageToHistoryCRDB(ctx context.Context, client *pgxpool.Pool, chatroomPath string, chatMessage string) error {
 // 	_, err := client.RPush(ctx, "messages_"+chatroomPath, chatMessage).Result()
 // 	if err != nil {
 // 		log.Println("Error adding message to chatroom history:", err)
@@ -229,7 +240,7 @@ func connectCockrochDB(context context.Context) *pgx.Conn {
 // 	return err
 // }
 
-// func removeMessageFromHistoryCRDB(ctx context.Context, client *pgx.Conn, chatroomPath string) error {
+// func removeMessageFromHistoryCRDB(ctx context.Context, client *pgxpool.Pool, chatroomPath string) error {
 // 	_, err := client.LPop(ctx, "messages_"+chatroomPath).Result()
 // 	if err != nil {
 // 		log.Println("Error removing message from chatroom history:", err)
@@ -237,7 +248,7 @@ func connectCockrochDB(context context.Context) *pgx.Conn {
 // 	return err
 // }
 
-// func deleteKeyCRDB(ctx context.Context, client *pgx.Conn, key string) error {
+// func deleteKeyCRDB(ctx context.Context, client *pgxpool.Pool, key string) error {
 // 	_, err := client.Del(ctx, "messages_"+key).Result()
 // 	if err != nil {
 // 		log.Println("Error deleting message history of chatroom:", err)
@@ -245,7 +256,7 @@ func connectCockrochDB(context context.Context) *pgx.Conn {
 // 	return err
 // }
 
-// func getAllChatroomsCRDB(ctx context.Context, client *pgx.Conn, key string) (map[string]string, error) {
+// func getAllChatroomsCRDB(ctx context.Context, client *pgxpool.Pool, key string) (map[string]string, error) {
 // 	rooms, err := client.HGetAll(ctx, key).Result()
 // 	if err != nil {
 // 		log.Println("Error getting all chatrooms in lobby:", err)
@@ -253,7 +264,7 @@ func connectCockrochDB(context context.Context) *pgx.Conn {
 // 	return rooms, err
 // }
 
-// func addChatroomToLobbyCRDB(ctx context.Context, client *pgx.Conn, key string, room map[string]interface{}) error {
+// func addChatroomToLobbyCRDB(ctx context.Context, client *pgxpool.Pool, key string, room map[string]interface{}) error {
 // 	_, err := client.HSet(ctx, key, room).Result()
 // 	if err != nil {
 // 		log.Println("Error adding chatroom to lobby:", err)
@@ -261,7 +272,7 @@ func connectCockrochDB(context context.Context) *pgx.Conn {
 // 	return err
 // }
 
-// func removeChatroomFromLobbyCRDB(ctx context.Context, client *pgx.Conn, key string, roomname string) error {
+// func removeChatroomFromLobbyCRDB(ctx context.Context, client *pgxpool.Pool, key string, roomname string) error {
 // 	_, err := client.HDel(ctx, key, roomname).Result()
 // 	if err != nil {
 // 		log.Println("Error removing chatroom from lobby:", err)

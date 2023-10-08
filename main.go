@@ -17,13 +17,13 @@ func main() {
 	log.Println(cacheClient)
 
 	databaseClient := connectCockrochDB(ctx)
-	defer databaseClient.Close(ctx)
+	defer databaseClient.Close()
 
 	index := NewChatroom("index", "home page")
 	AllRooms["/ws_lobby"] = index
 
 	setHandlers()
-	initAPI(ctx, cacheClient)
+	initAPI(ctx, cacheClient, databaseClient)
 
 	chatrooms, err := getAllChatroomsRedis(ctx, cacheClient, "lobby")
 	if err != nil {
