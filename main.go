@@ -49,6 +49,15 @@ func main() {
 // TODO
 
 //	 - add cockroachDB functions
+//	 - refactor cache layer:
+//		 - Redis keys should be set to expire after a certain amount of time.
+//		 - Define what data should be fast retrieval
+//			 - Everything persisted needs fast retrieval
+//				 - Lobby
+//				 - Users
+//				 - Messages
+//		 - Check Redis first for data and fallback to cockroachDB
+//		 - CockroachDB is considered the source of truth, this should be reflected in the code
 
 // bugs
 
