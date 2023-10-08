@@ -284,6 +284,10 @@ func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 
 			err := changeUserNameRedis(ctx, redisClient, displayname, newname, roompath)
 
+			if err == nil {
+				changeUserNameCRDB(ctx, CRDBClient, displayname, newname, roompath)
+			}
+
 			if err != nil {
 				log.Panicf("Error changing username %v to %v in chatroom %v", displayname, newname, http.StatusInternalServerError)
 			} else {
@@ -297,6 +301,10 @@ func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 		func(w http.ResponseWriter, r *http.Request) {
 
 			err := removeUserFromChatroomRedis(ctx, redisClient, displayname, roompath)
+
+			if err == nil {
+				err = removeUserFromChatroomCRDB(ctx, CRDBClient, displayname, roompath)
+			}
 
 			if err != nil {
 				log.Panicf("Error removing user from chatroom %v", http.StatusInternalServerError)

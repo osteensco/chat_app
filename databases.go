@@ -178,50 +178,55 @@ func addUserToChatroomCRDB(ctx context.Context, client *pgxpool.Pool, displayNam
 }
 
 // func isUserInChatroomCRDB(ctx context.Context, client *pgxpool.Pool, displayname string, chatroomPath string) (bool, error) {
-// 	isMember, err := client.SIsMember(ctx, "users_"+chatroomPath, displayname).Result()
+
+// 	createTableIfNotExistsCRDB(ctx, client, "users", "(chatroompath STRING, displayname STRING)")
+
+// 	var isMember bool
+
+// 	err := client.QueryRow(ctx, "SELECT TRUE FROM users WHERE displayname = $1 AND chatroompath = $2", displayname, chatroomPath).Scan(&isMember)
 // 	if err != nil {
+// 		if err == pgx.ErrNoRows {
+// 			return false, nil
+// 		}
 // 		return false, err
 // 	}
 
 // 	return isMember, nil
-// }
-
-// func removeUserFromChatroomCRDB(ctx context.Context, client *pgxpool.Pool, displayName string, chatroomPath string) error {
-// 	_, err := client.SRem(ctx, "users_"+chatroomPath, displayName).Result()
-// 	if err != nil {
-// 		log.Println("Error removing user from chatroom:", err)
-// 	}
-// 	return err
-// }
-
-// func changeUserNameCRDB(ctx context.Context, client *pgxpool.Pool, oldName string, newName string, chatroomPath string) error {
-
-// 	userExists, err := isUserInChatroomRedis(ctx, client, oldName, chatroomPath)
-
-// 	if userExists && err == nil {
-// 		err := removeUserFromChatroomRedis(ctx, client, oldName, chatroomPath)
-// 		if err != nil {
-// 			return err
-// 		} else {
-// 			err := addUserToChatroomRedis(ctx, client, newName, chatroomPath)
-// 			if err != nil {
-// 				return err
-// 			}
-// 		}
-// 	} else if !userExists {
-// 		log.Panicf("%v not found in Redis db", oldName)
-// 	}
-
-// 	return err
 
 // }
+
+func removeUserFromChatroomCRDB(ctx context.Context, client *pgxpool.Pool, displayName string, chatroomPath string) error {
+
+	_, err := client.Query(ctx, "DELETE FROM users WHERE displayname = $1 AND chatroompath = $2", displayName, chatroomPath)
+	if err != nil {
+		log.Println("Error removing user from chatroom:", err)
+	}
+	return err
+
+}
+
+func changeUserNameCRDB(ctx context.Context, client *pgxpool.Pool, oldName string, newName string, chatroomPath string) error {
+
+	_, err := client.Query(ctx, "UPDATE users SET displayname = $1 WHERE displayname = $2 AND chatroompath = $3", newName, oldName, chatroomPath)
+	if err != nil {
+		log.Println("Error updating user displayname:", err)
+	}
+	return err
+
+}
 
 // func getMessageHistoryCRDB(ctx context.Context, client *pgxpool.Pool, chatroomPath string) ([]string, error) {
-// 	chatMessages, err := client.LRange(ctx, "messages_"+chatroomPath, 0, -1).Result()
+
+// 	createTableIfNotExistsCRDB(ctx, client, "messages", "(chatroompath STRING, message ARRAY<STRING>)")
+
+// 	var messages []string
+// 	err := client.QueryRow(ctx, "SELECT message FROM messages WHERE chatroompath = $1", chatroomPath).Scan(&messages)
 // 	if err != nil {
-// 		log.Println("Error getting message history from chatroom:", err)
+// 		return nil, err
 // 	}
-// 	return chatMessages, err
+
+// 	return messages, nil
+
 // }
 
 // func getMessageHistoryLengthCRDB(ctx context.Context, client *pgxpool.Pool, chatroomPath string) (int64, error) {

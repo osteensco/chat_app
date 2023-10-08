@@ -51,3 +51,5 @@ func main() {
 //	 - add cockroachDB functions
 
 // bugs
+
+//	 - window unloads before both removeDisplayNameFromRoom and roomExitMessage functions fire

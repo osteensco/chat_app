@@ -103,7 +103,7 @@ func (cr *Chatroom) startRemovalTimer() {
 			timer.Stop()
 			return
 		} else {
-			if time.Since(startTime) >= 1*time.Minute {
+			if time.Since(startTime) >= 10*time.Minute {
 
 				timer.Stop()
 

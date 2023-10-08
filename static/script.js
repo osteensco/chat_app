@@ -309,8 +309,8 @@ window.onload = async () => {
             roomEntranceMessage(messagesEP, conn, displayname.value, pagePath);
 
             window.onunload = async () => {
-                await roomExitMessage(messagesEP, conn, displayname.value, pagePath);
                 await removeDisplayNameFromRoom(pagePath, usersEP, displayname.value);
+                await roomExitMessage(messagesEP, conn, displayname.value, pagePath);
             };
             
             nameInputButton.onclick = async () => {
