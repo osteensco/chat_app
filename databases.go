@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/go-redis/redis/v8"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -177,23 +178,23 @@ func addUserToChatroomCRDB(ctx context.Context, client *pgxpool.Pool, displayNam
 
 }
 
-// func isUserInChatroomCRDB(ctx context.Context, client *pgxpool.Pool, displayname string, chatroomPath string) (bool, error) {
+func isUserInChatroomCRDB(ctx context.Context, client *pgxpool.Pool, displayname string, chatroomPath string) (bool, error) {
 
-// 	createTableIfNotExistsCRDB(ctx, client, "users", "(chatroompath STRING, displayname STRING)")
+	createTableIfNotExistsCRDB(ctx, client, "users", "(chatroompath STRING, displayname STRING)")
 
-// 	var isMember bool
+	var isMember bool
 
-// 	err := client.QueryRow(ctx, "SELECT TRUE FROM users WHERE displayname = $1 AND chatroompath = $2", displayname, chatroomPath).Scan(&isMember)
-// 	if err != nil {
-// 		if err == pgx.ErrNoRows {
-// 			return false, nil
-// 		}
-// 		return false, err
-// 	}
+	err := client.QueryRow(ctx, "SELECT TRUE FROM users WHERE displayname = $1 AND chatroompath = $2", displayname, chatroomPath).Scan(&isMember)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return false, nil
+		}
+		return false, err
+	}
 
-// 	return isMember, nil
+	return isMember, nil
 
-// }
+}
 
 func removeUserFromChatroomCRDB(ctx context.Context, client *pgxpool.Pool, displayName string, chatroomPath string) error {
 
@@ -215,72 +216,93 @@ func changeUserNameCRDB(ctx context.Context, client *pgxpool.Pool, oldName strin
 
 }
 
-// func getMessageHistoryCRDB(ctx context.Context, client *pgxpool.Pool, chatroomPath string) ([]string, error) {
+func getMessageHistoryCRDB(ctx context.Context, client *pgxpool.Pool, chatroomPath string) ([]string, error) {
 
-// 	createTableIfNotExistsCRDB(ctx, client, "messages", "(chatroompath STRING, message ARRAY<STRING>)")
+	createTableIfNotExistsCRDB(ctx, client, "messages", "(chatroompath STRING, message ARRAY<STRING>)")
 
-// 	var messages []string
-// 	err := client.QueryRow(ctx, "SELECT message FROM messages WHERE chatroompath = $1", chatroomPath).Scan(&messages)
-// 	if err != nil {
-// 		return nil, err
-// 	}
+	var messages []string
+	err := client.QueryRow(ctx, "SELECT message FROM messages WHERE chatroompath = $1", chatroomPath).Scan(&messages)
+	if err != nil {
+		return nil, err
+	}
 
-// 	return messages, nil
+	return messages, nil
 
-// }
+}
 
-// func getMessageHistoryLengthCRDB(ctx context.Context, client *pgxpool.Pool, chatroomPath string) (int64, error) {
-// 	length, err := client.LLen(ctx, "messages_"+chatroomPath).Result()
-// 	if err != nil {
-// 		log.Println("Error getting length of message history from chatroom:", err)
-// 	}
-// 	return length, err
-// }
+func addMessageToHistoryCRDB(ctx context.Context, client *pgxpool.Pool, chatroomPath string, chatMessage string) error {
 
-// func addMessageToHistoryCRDB(ctx context.Context, client *pgxpool.Pool, chatroomPath string, chatMessage string) error {
-// 	_, err := client.RPush(ctx, "messages_"+chatroomPath, chatMessage).Result()
-// 	if err != nil {
-// 		log.Println("Error adding message to chatroom history:", err)
-// 	}
-// 	return err
-// }
+	_, err := client.Query(ctx, "UPDATE messages SET message = ARRAY_APPEND(message, $2) WHERE chatroompath = $1", chatroomPath, chatMessage)
+	if err != nil {
+		log.Println("Error adding message to chatroom history:", err)
+	}
+	return err
 
-// func removeMessageFromHistoryCRDB(ctx context.Context, client *pgxpool.Pool, chatroomPath string) error {
-// 	_, err := client.LPop(ctx, "messages_"+chatroomPath).Result()
-// 	if err != nil {
-// 		log.Println("Error removing message from chatroom history:", err)
-// 	}
-// 	return err
-// }
+}
 
-// func deleteKeyCRDB(ctx context.Context, client *pgxpool.Pool, key string) error {
-// 	_, err := client.Del(ctx, "messages_"+key).Result()
-// 	if err != nil {
-// 		log.Println("Error deleting message history of chatroom:", err)
-// 	}
-// 	return err
-// }
+func removeMessageFromHistoryCRDB(ctx context.Context, client *pgxpool.Pool, chatroomPath string) error {
 
-// func getAllChatroomsCRDB(ctx context.Context, client *pgxpool.Pool, key string) (map[string]string, error) {
-// 	rooms, err := client.HGetAll(ctx, key).Result()
-// 	if err != nil {
-// 		log.Println("Error getting all chatrooms in lobby:", err)
-// 	}
-// 	return rooms, err
-// }
+	_, err := client.Query(ctx, "UPDATE messages SET message = message[1:] WHERE chatroompath = $1", chatroomPath)
+	if err != nil {
+		log.Println("Error removing message from chatroom history:", err)
+	}
+	return err
 
-// func addChatroomToLobbyCRDB(ctx context.Context, client *pgxpool.Pool, key string, room map[string]interface{}) error {
-// 	_, err := client.HSet(ctx, key, room).Result()
-// 	if err != nil {
-// 		log.Println("Error adding chatroom to lobby:", err)
-// 	}
-// 	return err
-// }
+}
 
-// func removeChatroomFromLobbyCRDB(ctx context.Context, client *pgxpool.Pool, key string, roomname string) error {
-// 	_, err := client.HDel(ctx, key, roomname).Result()
-// 	if err != nil {
-// 		log.Println("Error removing chatroom from lobby:", err)
-// 	}
-// 	return err
-// }
+func deleteKeyCRDB(ctx context.Context, client *pgxpool.Pool, key string) error {
+
+	_, err := client.Query(ctx, "DELETE FROM messages WHERE chatroompath = $1", key)
+	if err != nil {
+		log.Println("Error deleting message history of chatroom:", err)
+	}
+	return err
+
+}
+
+func getAllChatroomsCRDB(ctx context.Context, client *pgxpool.Pool, key string) (map[string]string, error) {
+
+	rooms := make(map[string]string)
+
+	rows, err := client.Query(ctx, "SELECT * FROM lobby")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var key, value string
+		if err := rows.Scan(&key, &value); err != nil {
+			return nil, err
+		}
+
+		rooms[key] = value
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return rooms, nil
+
+}
+
+func addChatroomToLobbyCRDB(ctx context.Context, client *pgxpool.Pool, roomname string, roompath string) error {
+
+	_, err := client.Query(ctx, "INSERT INTO lobby (roomname, roompath) VALUES ($1, $2)", roomname, roompath)
+	if err != nil {
+		log.Println("Error adding chatroom to lobby:", err)
+	}
+	return err
+
+}
+
+func removeChatroomFromLobbyCRDB(ctx context.Context, client *pgxpool.Pool, roomname string) error {
+
+	_, err := client.Query(ctx, "DELETE FROM lobby WHERE roomname = $1", roomname)
+	if err != nil {
+		log.Println("Error removing chatroom from lobby:", err)
+	}
+	return err
+
+}
