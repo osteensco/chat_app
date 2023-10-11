@@ -237,8 +237,12 @@ func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 			displayNameExists, err := isUserInChatroomRedis(ctx, redisClient, displayname, roompath)
 
 			if err != nil {
-				log.Panicf("Error querying Redis with displayname %v %v", displayname, http.StatusInternalServerError)
-			} else if !displayNameExists {
+				displayNameExists, err = isUserInChatroomCRDB(ctx, CRDBClient, displayname, roompath)
+				if err != nil {
+					log.Panicf("Error querying Redis with displayname %v %v", displayname, http.StatusInternalServerError)
+				}
+			}
+			if !displayNameExists {
 				log.Printf("%v does not exist in chatroom %v", displayname, roompath)
 				w.WriteHeader(http.StatusBadRequest)
 				response := map[string]interface{}{
