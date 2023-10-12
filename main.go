@@ -48,6 +48,8 @@ func main() {
 
 // TODO
 
+//	 - fix GET operations in router
+
 //	 - refactor cache layer:
 //		 - Redis keys should be set to expire after a certain amount of time.
 //			- lobby key should never expire
