@@ -48,7 +48,6 @@ func main() {
 
 // TODO
 
-//	 - add cockroachDB functions
 //	 - refactor cache layer:
 //		 - Redis keys should be set to expire after a certain amount of time.
 //			- lobby key should never expire
