@@ -36,6 +36,19 @@ func connectRedis(context context.Context) *redis.Client {
 
 }
 
+func redisKeyExists(ctx context.Context, client *redis.Client, key string) bool {
+
+	result, err := client.Exists(ctx, key).Result()
+	if err != nil || result == 0 {
+		return false
+	} else if result == 1 {
+		return true
+	} else {
+		return false
+	}
+
+}
+
 func addUserToChatroomRedis(ctx context.Context, client *redis.Client, displayName string, chatroomPath string) error {
 	_, err := client.SAdd(ctx, "users_"+chatroomPath, displayName).Result()
 	if err != nil {
@@ -91,12 +104,12 @@ func getMessageHistoryRedis(ctx context.Context, client *redis.Client, chatroomP
 	return chatMessages, err
 }
 
-func getMessageHistoryLengthRedis(ctx context.Context, client *redis.Client, chatroomPath string) (int64, error) {
+func getMessageHistoryLengthRedis(ctx context.Context, client *redis.Client, chatroomPath string) (int8, error) {
 	length, err := client.LLen(ctx, "messages_"+chatroomPath).Result()
 	if err != nil {
 		log.Println("Error getting length of message history from chatroom:", err)
 	}
-	return length, err
+	return int8(length), err
 }
 
 func addMessageToHistoryRedis(ctx context.Context, client *redis.Client, chatroomPath string, chatMessage string) error {

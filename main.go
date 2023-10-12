@@ -63,7 +63,7 @@ func main() {
 //		 - Check Redis first for data and fallback to cockroachDB
 //		 - CockroachDB is considered the source of truth, this should be reflected in the code
 
-//		*** GET request -> check redis -> check cockroachDB -> write to redis or restart decrepancy timer if already in redis
+//		*** GET request -> check redis -> if error or nothing returned -> check cockroachDB -> write to redis or restart decrepancy timer if already in redis
 //		****** All other requests -> cockroachDB function -> if no error -> redis function
 //		********* This should ensure cockroachDB is maintained as source of truth
 

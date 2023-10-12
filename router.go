@@ -82,9 +82,9 @@ func lobbyEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 			}
 
 			room := map[string]interface{}{roomname: fmt.Sprintf("%v", string(jsonroompath))}
-			err = addChatroomToLobbyRedis(ctx, redisClient, key, room)
+			err = addChatroomToLobbyCRDB(ctx, CRDBClient, roomname, roompath)
 			if err == nil {
-				addChatroomToLobbyCRDB(ctx, CRDBClient, roomname, roompath)
+				err = addChatroomToLobbyRedis(ctx, redisClient, key, room)
 			}
 			if err != nil {
 				log.Panicf("Error adding chatroom to %v in Redis %v", key, http.StatusInternalServerError)
@@ -98,9 +98,9 @@ func lobbyEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 		// used when chatroom is removed
 		func(w http.ResponseWriter, r *http.Request) {
 
-			err := removeChatroomFromLobbyRedis(ctx, redisClient, key, roomname)
+			err := removeChatroomFromLobbyCRDB(ctx, CRDBClient, roomname)
 			if err == nil {
-				removeChatroomFromLobbyCRDB(ctx, CRDBClient, roomname)
+				err = removeChatroomFromLobbyRedis(ctx, redisClient, key, roomname)
 			}
 			if err != nil {
 				log.Panicf("Error removing chatroom from %v in Redis %v", key, http.StatusInternalServerError)
@@ -180,39 +180,43 @@ func messagesEP(w http.ResponseWriter, r *http.Request, ctx context.Context, red
 		func(w http.ResponseWriter, r *http.Request) {
 
 			// check length, remove earliest message if applicable
-			length, err := getMessageHistoryLengthRedis(ctx, redisClient, roompath)
 
-			if err != nil || length == 0 {
-
-				var messagesArray []string
-				messagesArray, err = getMessageHistoryCRDB(ctx, CRDBClient, roompath)
-
-				if err != nil {
-					log.Panicf("Error message count from chatroom history %v", http.StatusInternalServerError)
-				} else {
-					length = int64(len(messagesArray))
-				}
-
-			}
-
-			if length == 10 {
-				err = removeMessageFromHistoryRedis(ctx, redisClient, roompath)
-				if err == nil {
-					err = removeMessageFromHistoryCRDB(ctx, CRDBClient, roompath)
-				}
-				if err != nil {
-					log.Panicf("Error removing message from chatroom history %v", http.StatusInternalServerError)
-				}
-			}
-
-			err = addMessageToHistoryRedis(ctx, redisClient, roompath, chatMessage)
-			if err == nil {
-				err = addMessageToHistoryCRDB(ctx, CRDBClient, roompath, chatMessage)
-			}
+			// Update Database
+			var length int8
+			messagesArray, err := getMessageHistoryCRDB(ctx, CRDBClient, roompath)
 			if err != nil {
-				log.Panicf("Error adding message to chatroom history %v", http.StatusInternalServerError)
+				log.Panicf("Error message count from chatroom history %v", http.StatusInternalServerError)
 			} else {
+				length = int8(len(messagesArray))
+				if length == 10 {
+					err = removeMessageFromHistoryCRDB(ctx, CRDBClient, roompath)
+					if err != nil {
+						log.Panicf("Error removing message from chatroom history %v", http.StatusInternalServerError)
+					}
+				}
+				err = addMessageToHistoryCRDB(ctx, CRDBClient, roompath, chatMessage)
+				if err != nil {
+					log.Panicf("Error adding message to chatroom history %v", http.StatusInternalServerError)
+				}
+			}
+
+			// Update Cache if applicable
+			length, err = getMessageHistoryLengthRedis(ctx, redisClient, roompath)
+			if err != nil || redisKeyExists(ctx, redisClient, "messages_"+roompath) {
 				w.WriteHeader(http.StatusOK)
+			} else {
+				if length == 10 {
+					err = removeMessageFromHistoryRedis(ctx, redisClient, roompath)
+					if err != nil {
+						log.Panicf("Error removing message from chatroom history %v", http.StatusInternalServerError)
+					}
+				}
+				err = addMessageToHistoryRedis(ctx, redisClient, roompath, chatMessage)
+				if err != nil {
+					log.Panicf("Error adding message to chatroom history %v", http.StatusInternalServerError)
+				} else {
+					w.WriteHeader(http.StatusOK)
+				}
 			}
 
 		}(w, r)
@@ -221,9 +225,9 @@ func messagesEP(w http.ResponseWriter, r *http.Request, ctx context.Context, red
 		// used on chatroom removal
 		func(w http.ResponseWriter, r *http.Request) {
 
-			err := deleteKeyRedis(ctx, redisClient, roompath)
+			err := deleteKeyCRDB(ctx, CRDBClient, roompath)
 			if err == nil {
-				deleteKeyCRDB(ctx, CRDBClient, roompath)
+				deleteKeyRedis(ctx, redisClient, roompath)
 			}
 			if err != nil {
 				log.Panicf("Error removing chatroom history for room %v, %v", roompath, http.StatusInternalServerError)
@@ -296,10 +300,10 @@ func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 		// used when a new client enters a room
 		func(w http.ResponseWriter, r *http.Request) {
 
-			err := addUserToChatroomRedis(ctx, redisClient, displayname, roompath)
+			err := addUserToChatroomCRDB(ctx, CRDBClient, displayname, roompath)
 
-			if err == nil {
-				err = addUserToChatroomCRDB(ctx, CRDBClient, displayname, roompath)
+			if err == nil && redisKeyExists(ctx, redisClient, "users_"+roompath) {
+				err = addUserToChatroomRedis(ctx, redisClient, displayname, roompath)
 			}
 
 			if err != nil {
@@ -321,10 +325,10 @@ func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 
 			log.Printf("changing name from %v to %v in %v", displayname, newname, roompath)
 
-			err := changeUserNameRedis(ctx, redisClient, displayname, newname, roompath)
+			err := changeUserNameCRDB(ctx, CRDBClient, displayname, newname, roompath)
 
-			if err == nil {
-				changeUserNameCRDB(ctx, CRDBClient, displayname, newname, roompath)
+			if err == nil && redisKeyExists(ctx, redisClient, "message_"+roompath) {
+				changeUserNameRedis(ctx, redisClient, displayname, newname, roompath)
 			}
 
 			if err != nil {
@@ -339,10 +343,10 @@ func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 		// used when a client leaves a room or a room is removed from the server
 		func(w http.ResponseWriter, r *http.Request) {
 
-			err := removeUserFromChatroomRedis(ctx, redisClient, displayname, roompath)
+			err := removeUserFromChatroomCRDB(ctx, CRDBClient, displayname, roompath)
 
 			if err == nil {
-				err = removeUserFromChatroomCRDB(ctx, CRDBClient, displayname, roompath)
+				err = removeUserFromChatroomRedis(ctx, redisClient, displayname, roompath)
 			}
 
 			if err != nil {
