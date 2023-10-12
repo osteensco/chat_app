@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func lobbyEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisClient *redis.Client) {
+func lobbyEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisClient *redis.Client, CRDBClient *pgxpool.Pool) {
 
 	defer func() {
 		if rec := recover(); rec != nil {
@@ -45,8 +45,11 @@ func lobbyEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 	case "GET":
 		// used on new client entering lobby
 		func(w http.ResponseWriter, r *http.Request) {
-			allChatrooms, err := getAllChatroomsRedis(ctx, redisClient, key)
 
+			allChatrooms, err := getAllChatroomsRedis(ctx, redisClient, key)
+			if err != nil || len(allChatrooms) == 0 {
+				allChatrooms, err = getAllChatroomsCRDB(ctx, CRDBClient, key)
+			}
 			if err != nil {
 				log.Panicf("Error getting all chatromms in %v from Redis %v", roompath, http.StatusInternalServerError)
 			} else {
@@ -80,6 +83,9 @@ func lobbyEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 
 			room := map[string]interface{}{roomname: fmt.Sprintf("%v", string(jsonroompath))}
 			err = addChatroomToLobbyRedis(ctx, redisClient, key, room)
+			if err == nil {
+				addChatroomToLobbyCRDB(ctx, CRDBClient, roomname, roompath)
+			}
 			if err != nil {
 				log.Panicf("Error adding chatroom to %v in Redis %v", key, http.StatusInternalServerError)
 			} else {
@@ -93,6 +99,9 @@ func lobbyEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 		func(w http.ResponseWriter, r *http.Request) {
 
 			err := removeChatroomFromLobbyRedis(ctx, redisClient, key, roomname)
+			if err == nil {
+				removeChatroomFromLobbyCRDB(ctx, CRDBClient, roomname)
+			}
 			if err != nil {
 				log.Panicf("Error removing chatroom from %v in Redis %v", key, http.StatusInternalServerError)
 			} else {
@@ -104,7 +113,7 @@ func lobbyEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 
 }
 
-func messagesEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisClient *redis.Client) {
+func messagesEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisClient *redis.Client, CRDBClient *pgxpool.Pool) {
 
 	defer func() {
 		if rec := recover(); rec != nil {
@@ -133,9 +142,13 @@ func messagesEP(w http.ResponseWriter, r *http.Request, ctx context.Context, red
 
 			chatMessages, err := getMessageHistoryRedis(ctx, redisClient, roompath)
 
-			if err != nil {
-				log.Panicf("Error querying Redis with roompath %v %v", roompath, http.StatusInternalServerError)
-			} else {
+			if err != nil || len(chatMessages) == 0 {
+				chatMessages, err = getMessageHistoryCRDB(ctx, CRDBClient, roompath)
+
+				if err != nil {
+					log.Panicf("Error querying Redis with roompath %v %v", roompath, http.StatusInternalServerError)
+					return
+				}
 
 				responsePayload, err := json.Marshal(chatMessages)
 				if err != nil {
@@ -151,6 +164,7 @@ func messagesEP(w http.ResponseWriter, r *http.Request, ctx context.Context, red
 					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 					return
 				}
+
 			}
 
 		}(w, r)
@@ -167,16 +181,34 @@ func messagesEP(w http.ResponseWriter, r *http.Request, ctx context.Context, red
 
 			// check length, remove earliest message if applicable
 			length, err := getMessageHistoryLengthRedis(ctx, redisClient, roompath)
-			if err != nil {
-				log.Panicf("Error message count from chatroom history %v", http.StatusInternalServerError)
-			} else if length == 10 {
-				err := removeMessageFromHistoryRedis(ctx, redisClient, roompath)
+
+			if err != nil || length == 0 {
+
+				var messagesArray []string
+				messagesArray, err = getMessageHistoryCRDB(ctx, CRDBClient, roompath)
+
+				if err != nil {
+					log.Panicf("Error message count from chatroom history %v", http.StatusInternalServerError)
+				} else {
+					length = int64(len(messagesArray))
+				}
+
+			}
+
+			if length == 10 {
+				err = removeMessageFromHistoryRedis(ctx, redisClient, roompath)
+				if err == nil {
+					err = removeMessageFromHistoryCRDB(ctx, CRDBClient, roompath)
+				}
 				if err != nil {
 					log.Panicf("Error removing message from chatroom history %v", http.StatusInternalServerError)
 				}
 			}
 
 			err = addMessageToHistoryRedis(ctx, redisClient, roompath, chatMessage)
+			if err == nil {
+				err = addMessageToHistoryCRDB(ctx, CRDBClient, roompath, chatMessage)
+			}
 			if err != nil {
 				log.Panicf("Error adding message to chatroom history %v", http.StatusInternalServerError)
 			} else {
@@ -190,6 +222,9 @@ func messagesEP(w http.ResponseWriter, r *http.Request, ctx context.Context, red
 		func(w http.ResponseWriter, r *http.Request) {
 
 			err := deleteKeyRedis(ctx, redisClient, roompath)
+			if err == nil {
+				deleteKeyCRDB(ctx, CRDBClient, roompath)
+			}
 			if err != nil {
 				log.Panicf("Error removing chatroom history for room %v, %v", roompath, http.StatusInternalServerError)
 			} else {
@@ -325,7 +360,7 @@ func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 func initAPI(ctx context.Context, redisClient *redis.Client, CRDBClient *pgxpool.Pool) {
 
 	http.HandleFunc("/api/lobby", func(w http.ResponseWriter, r *http.Request) {
-		lobbyEP(w, r, ctx, redisClient)
+		lobbyEP(w, r, ctx, redisClient, CRDBClient)
 	})
 	// Redis HASH
 	// lobby: {
@@ -333,7 +368,7 @@ func initAPI(ctx context.Context, redisClient *redis.Client, CRDBClient *pgxpool
 	// 	room path: xxxxxxxxxxxxxxxxx
 	// }
 	http.HandleFunc("/api/messages", func(w http.ResponseWriter, r *http.Request) {
-		messagesEP(w, r, ctx, redisClient)
+		messagesEP(w, r, ctx, redisClient, CRDBClient)
 	})
 	// Redis LIST
 	// chatrooms: {
