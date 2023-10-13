@@ -48,7 +48,11 @@ func main() {
 
 // TODO
 
-//	 - fix GET operations in router
+//	 - normalize error handling in router
+//	 -
+// panic
+// http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+// return
 
 //	 - refactor cache layer:
 //		 - Redis keys should be set to expire after a certain amount of time.

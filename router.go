@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -46,12 +45,26 @@ func lobbyEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 		// used on new client entering lobby
 		func(w http.ResponseWriter, r *http.Request) {
 
-			allChatrooms, err := getAllChatroomsRedis(ctx, redisClient, key)
-			if err != nil || len(allChatrooms) == 0 {
+			var allChatrooms map[string]string
+			var err error
+
+			if redisKeyExists(ctx, redisClient, key) {
+				allChatrooms, err = getAllChatroomsRedis(ctx, redisClient, key)
+			} else {
 				allChatrooms, err = getAllChatroomsCRDB(ctx, CRDBClient, key)
+				go func() {
+					log.Println("Adding lobby to cache (Redis)")
+					for chatroomName, chatroomPath := range allChatrooms {
+						err := addChatroomToLobbyRedis(ctx, redisClient, key, chatroomPath, chatroomName)
+						if err != nil {
+							log.Println("Error adding chatroom to lobby in Redis:", err)
+						}
+					}
+				}()
 			}
+
 			if err != nil {
-				log.Panicf("Error getting all chatromms in %v from Redis %v", roompath, http.StatusInternalServerError)
+				log.Panicf("Error getting all chatrooms in %v:  %v", key, http.StatusInternalServerError)
 			} else {
 
 				responsePayload, err := json.Marshal(allChatrooms)
@@ -76,15 +89,9 @@ func lobbyEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 		// used when new chatroom is created
 		func(w http.ResponseWriter, r *http.Request) {
 
-			jsonroompath, err := json.Marshal(roompath)
-			if err != nil {
-				log.Panicf("error marchaling JSON: %v", err)
-			}
-
-			room := map[string]interface{}{roomname: fmt.Sprintf("%v", string(jsonroompath))}
-			err = addChatroomToLobbyCRDB(ctx, CRDBClient, roomname, roompath)
+			err := addChatroomToLobbyCRDB(ctx, CRDBClient, roomname, roompath)
 			if err == nil {
-				err = addChatroomToLobbyRedis(ctx, redisClient, key, room)
+				err = addChatroomToLobbyRedis(ctx, redisClient, key, roomname, roompath)
 			}
 			if err != nil {
 				log.Panicf("Error adding chatroom to %v in Redis %v", key, http.StatusInternalServerError)
@@ -140,31 +147,43 @@ func messagesEP(w http.ResponseWriter, r *http.Request, ctx context.Context, red
 		//used to get chat history on user entering room
 		func(w http.ResponseWriter, r *http.Request) {
 
-			chatMessages, err := getMessageHistoryRedis(ctx, redisClient, roompath)
+			var chatMessages []string
+			var err error
 
-			if err != nil || len(chatMessages) == 0 {
+			if redisKeyExists(ctx, redisClient, "messages_"+roompath) {
+				chatMessages, err = getMessageHistoryRedis(ctx, redisClient, roompath)
+			} else {
 				chatMessages, err = getMessageHistoryCRDB(ctx, CRDBClient, roompath)
+				go func() {
+					log.Printf("Adding messages in room %v to cache (Redis)", roompath)
+					for _, message := range chatMessages {
+						err = addMessageToHistoryRedis(ctx, redisClient, roompath, message)
+						if err != nil {
+							log.Panicf("Error adding message to chatroom history %v", http.StatusInternalServerError)
+						}
+					}
+				}()
+			}
 
-				if err != nil {
-					log.Panicf("Error querying Redis with roompath %v %v", roompath, http.StatusInternalServerError)
-					return
-				}
+			if err != nil {
+				log.Panicf("Error querying messages for roompath %v, %v", roompath, err)
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				return
+			}
 
-				responsePayload, err := json.Marshal(chatMessages)
-				if err != nil {
-					log.Panicf("Error marshaling chatMessages to JSON: %v", err)
-					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-					return
-				}
+			responsePayload, err := json.Marshal(chatMessages)
+			if err != nil {
+				log.Panicf("Error marshaling chatMessages to JSON: %v", err)
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				return
+			}
 
-				w.Header().Set("Content-Type", "application/json")
-				_, err = w.Write(responsePayload)
-				if err != nil {
-					log.Panicf("Error writing JSON response: %v", err)
-					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-					return
-				}
-
+			w.Header().Set("Content-Type", "application/json")
+			_, err = w.Write(responsePayload)
+			if err != nil {
+				log.Panicf("Error writing JSON response: %v", err)
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				return
 			}
 
 		}(w, r)
@@ -273,14 +292,32 @@ func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 		// used when a new client is being assigned an anonymous display name
 		func(w http.ResponseWriter, r *http.Request) {
 
-			displayNameExists, err := isUserInChatroomRedis(ctx, redisClient, displayname, roompath)
+			var displayNameExists bool
+			var err error
+
+			if redisKeyExists(ctx, redisClient, "users_"+roompath) {
+				displayNameExists, err = isUserInChatroomRedis(ctx, redisClient, displayname, roompath)
+			} else {
+				displayNameExists, err = isUserInChatroomCRDB(ctx, CRDBClient, displayname, roompath)
+				go func() {
+					log.Printf("Adding users in room %v to cache (Redis)", roompath)
+					var allUsers []string
+					allUsers, err = getAllUsersInChatroomCRDB(ctx, CRDBClient, roompath)
+					for _, user := range allUsers {
+						err = addUserToChatroomRedis(ctx, redisClient, user, roompath)
+						if err != nil {
+							log.Panicf("Error adding user to chatroom %v, %v", http.StatusInternalServerError, err)
+						}
+					}
+				}()
+			}
 
 			if err != nil {
-				displayNameExists, err = isUserInChatroomCRDB(ctx, CRDBClient, displayname, roompath)
-				if err != nil {
-					log.Panicf("Error querying Redis with displayname %v %v", displayname, http.StatusInternalServerError)
-				}
+				log.Panicf("Error querying Redis with displayname %v %v", displayname, err)
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				return
 			}
+
 			if !displayNameExists {
 				log.Printf("%v does not exist in chatroom %v", displayname, roompath)
 				w.WriteHeader(http.StatusBadRequest)

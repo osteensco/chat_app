@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 
@@ -144,12 +146,23 @@ func getAllChatroomsRedis(ctx context.Context, client *redis.Client, key string)
 	return rooms, err
 }
 
-func addChatroomToLobbyRedis(ctx context.Context, client *redis.Client, key string, room map[string]interface{}) error {
-	_, err := client.HSet(ctx, key, room).Result()
+func addChatroomToLobbyRedis(ctx context.Context, client *redis.Client, key string, roomname string, roompath string) error {
+
+	jsonroompath, err := json.Marshal(roompath)
+	if err != nil {
+		log.Panicf("Error marshaling JSON: %v", err)
+		return err
+	}
+
+	room := map[string]interface{}{roomname: fmt.Sprintf("%v", string(jsonroompath))}
+
+	_, err = client.HSet(ctx, key, room).Result()
 	if err != nil {
 		log.Println("Error adding chatroom to lobby:", err)
 	}
+
 	return err
+
 }
 
 func removeChatroomFromLobbyRedis(ctx context.Context, client *redis.Client, key string, roomname string) error {
@@ -188,6 +201,33 @@ func addUserToChatroomCRDB(ctx context.Context, client *pgxpool.Pool, displayNam
 		log.Println("Error adding user to chatroom:", err)
 	}
 	return err
+
+}
+
+func getAllUsersInChatroomCRDB(ctx context.Context, client *pgxpool.Pool, chatroomPath string) ([]string, error) {
+
+	var users []string
+
+	rows, err := client.Query(ctx, "SELECT * FROM users WHERE chatroompath = $1", chatroomPath)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var user string
+		if err := rows.Scan(&user); err != nil {
+			return nil, err
+		}
+
+		users = append(users, user)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return users, nil
 
 }
 
