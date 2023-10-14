@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/jackc/pgx/v5"
@@ -47,6 +48,15 @@ func redisKeyExists(ctx context.Context, client *redis.Client, key string) bool 
 		return true
 	} else {
 		return false
+	}
+
+}
+
+func resetRedisKeyExpiration(ctx context.Context, client *redis.Client, key string) {
+
+	err := client.Expire(ctx, key, time.Duration(expirationSeconds)*time.Second).Err()
+	if err != nil {
+		log.Panicf("Error setting Redis Key expiration: %v", err)
 	}
 
 }

@@ -10,6 +10,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+var expirationSeconds = 300
+
 func lobbyEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisClient *redis.Client, CRDBClient *pgxpool.Pool) {
 
 	defer func() {
@@ -36,9 +38,9 @@ func lobbyEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 		log.Panicf("roompath query parameter not provided! Request URL provided was %v", r.URL)
 	}
 
-	key := "lobby"
-
 	log.Printf("%v room %v with path %v at lobbyEP", r.Method, roomname, roompath)
+
+	key := "lobby"
 
 	switch r.Method {
 	case "GET":
@@ -50,6 +52,7 @@ func lobbyEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 
 			if redisKeyExists(ctx, redisClient, key) {
 				allChatrooms, err = getAllChatroomsRedis(ctx, redisClient, key)
+				resetRedisKeyExpiration(ctx, redisClient, key)
 			} else {
 				allChatrooms, err = getAllChatroomsCRDB(ctx, CRDBClient, key)
 				go func() {
@@ -60,6 +63,7 @@ func lobbyEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 							log.Println("Error adding chatroom to lobby in Redis:", err)
 						}
 					}
+					resetRedisKeyExpiration(ctx, redisClient, key)
 				}()
 			}
 
@@ -148,6 +152,8 @@ func messagesEP(w http.ResponseWriter, r *http.Request, ctx context.Context, red
 
 	log.Printf("%v message(s) for room %v at messagesEP", r.Method, roompath)
 
+	var key = "messages_" + roompath
+
 	switch r.Method {
 	case "GET":
 		//used to get chat history on user entering room
@@ -156,8 +162,9 @@ func messagesEP(w http.ResponseWriter, r *http.Request, ctx context.Context, red
 			var chatMessages []string
 			var err error
 
-			if redisKeyExists(ctx, redisClient, "messages_"+roompath) {
+			if redisKeyExists(ctx, redisClient, key) {
 				chatMessages, err = getMessageHistoryRedis(ctx, redisClient, roompath)
+				resetRedisKeyExpiration(ctx, redisClient, key)
 			} else {
 				chatMessages, err = getMessageHistoryCRDB(ctx, CRDBClient, roompath)
 				go func() {
@@ -170,6 +177,7 @@ func messagesEP(w http.ResponseWriter, r *http.Request, ctx context.Context, red
 							return
 						}
 					}
+					resetRedisKeyExpiration(ctx, redisClient, key)
 				}()
 			}
 
@@ -235,7 +243,7 @@ func messagesEP(w http.ResponseWriter, r *http.Request, ctx context.Context, red
 
 			// Update Cache if applicable
 			length, err = getMessageHistoryLengthRedis(ctx, redisClient, roompath)
-			if err != nil || redisKeyExists(ctx, redisClient, "messages_"+roompath) {
+			if err != nil || redisKeyExists(ctx, redisClient, key) {
 				w.WriteHeader(http.StatusOK)
 			} else {
 				if length == 10 {
@@ -306,6 +314,8 @@ func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 
 	log.Printf("%v %v from %v at usersEP", r.Method, displayname, roompath)
 
+	var key = "users_" + roompath
+
 	switch r.Method {
 
 	case "GET":
@@ -315,8 +325,9 @@ func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 			var displayNameExists bool
 			var err error
 
-			if redisKeyExists(ctx, redisClient, "users_"+roompath) {
+			if redisKeyExists(ctx, redisClient, key) {
 				displayNameExists, err = isUserInChatroomRedis(ctx, redisClient, displayname, roompath)
+				resetRedisKeyExpiration(ctx, redisClient, key)
 			} else {
 				displayNameExists, err = isUserInChatroomCRDB(ctx, CRDBClient, displayname, roompath)
 				go func() {
@@ -331,6 +342,7 @@ func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 							return
 						}
 					}
+					resetRedisKeyExpiration(ctx, redisClient, key)
 				}()
 			}
 
@@ -361,7 +373,7 @@ func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 
 			err := addUserToChatroomCRDB(ctx, CRDBClient, displayname, roompath)
 
-			if err == nil && redisKeyExists(ctx, redisClient, "users_"+roompath) {
+			if err == nil && redisKeyExists(ctx, redisClient, key) {
 				err = addUserToChatroomRedis(ctx, redisClient, displayname, roompath)
 			}
 
@@ -388,7 +400,7 @@ func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 
 			err := changeUserNameCRDB(ctx, CRDBClient, displayname, newname, roompath)
 
-			if err == nil && redisKeyExists(ctx, redisClient, "message_"+roompath) {
+			if err == nil && redisKeyExists(ctx, redisClient, key) {
 				changeUserNameRedis(ctx, redisClient, displayname, newname, roompath)
 			}
 
