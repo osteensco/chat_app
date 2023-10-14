@@ -48,12 +48,6 @@ func main() {
 
 // TODO
 
-//	 - normalize error handling in router
-//	 -
-// panic
-// http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-// return
-
 //	 - refactor cache layer:
 //		 - Redis keys should be set to expire after a certain amount of time.
 //			- lobby key should never expire

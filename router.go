@@ -64,7 +64,9 @@ func lobbyEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 			}
 
 			if err != nil {
-				log.Panicf("Error getting all chatrooms in %v:  %v", key, http.StatusInternalServerError)
+				log.Panicf("Error getting all chatrooms in %v:  %v", key, err)
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				return
 			} else {
 
 				responsePayload, err := json.Marshal(allChatrooms)
@@ -94,7 +96,9 @@ func lobbyEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 				err = addChatroomToLobbyRedis(ctx, redisClient, key, roomname, roompath)
 			}
 			if err != nil {
-				log.Panicf("Error adding chatroom to %v in Redis %v", key, http.StatusInternalServerError)
+				log.Panicf("Error adding chatroom to %v: %v", key, err)
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				return
 			} else {
 				w.WriteHeader(http.StatusOK)
 			}
@@ -110,7 +114,9 @@ func lobbyEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 				err = removeChatroomFromLobbyRedis(ctx, redisClient, key, roomname)
 			}
 			if err != nil {
-				log.Panicf("Error removing chatroom from %v in Redis %v", key, http.StatusInternalServerError)
+				log.Panicf("Error removing chatroom from %v: %v", key, err)
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				return
 			} else {
 				w.WriteHeader(http.StatusOK)
 			}
@@ -159,7 +165,9 @@ func messagesEP(w http.ResponseWriter, r *http.Request, ctx context.Context, red
 					for _, message := range chatMessages {
 						err = addMessageToHistoryRedis(ctx, redisClient, roompath, message)
 						if err != nil {
-							log.Panicf("Error adding message to chatroom history %v", http.StatusInternalServerError)
+							log.Panicf("Error adding message to chatroom history: %v", err)
+							http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+							return
 						}
 					}
 				}()
@@ -204,18 +212,24 @@ func messagesEP(w http.ResponseWriter, r *http.Request, ctx context.Context, red
 			var length int8
 			messagesArray, err := getMessageHistoryCRDB(ctx, CRDBClient, roompath)
 			if err != nil {
-				log.Panicf("Error message count from chatroom history %v", http.StatusInternalServerError)
+				log.Panicf("Error message count from %v chatroom history: %v", roompath, err)
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				return
 			} else {
 				length = int8(len(messagesArray))
 				if length == 10 {
 					err = removeMessageFromHistoryCRDB(ctx, CRDBClient, roompath)
 					if err != nil {
-						log.Panicf("Error removing message from chatroom history %v", http.StatusInternalServerError)
+						log.Panicf("Error removing message from %v chatroom history: %v", roompath, err)
+						http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+						return
 					}
 				}
 				err = addMessageToHistoryCRDB(ctx, CRDBClient, roompath, chatMessage)
 				if err != nil {
-					log.Panicf("Error adding message to chatroom history %v", http.StatusInternalServerError)
+					log.Panicf("Error adding message to %v chatroom history: %v", roompath, err)
+					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+					return
 				}
 			}
 
@@ -227,12 +241,16 @@ func messagesEP(w http.ResponseWriter, r *http.Request, ctx context.Context, red
 				if length == 10 {
 					err = removeMessageFromHistoryRedis(ctx, redisClient, roompath)
 					if err != nil {
-						log.Panicf("Error removing message from chatroom history %v", http.StatusInternalServerError)
+						log.Panicf("Error removing message from %v chatroom history: %v", roompath, err)
+						http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+						return
 					}
 				}
 				err = addMessageToHistoryRedis(ctx, redisClient, roompath, chatMessage)
 				if err != nil {
-					log.Panicf("Error adding message to chatroom history %v", http.StatusInternalServerError)
+					log.Panicf("Error adding message to %v chatroom history: %v", roompath, err)
+					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+					return
 				} else {
 					w.WriteHeader(http.StatusOK)
 				}
@@ -249,7 +267,9 @@ func messagesEP(w http.ResponseWriter, r *http.Request, ctx context.Context, red
 				deleteKeyRedis(ctx, redisClient, roompath)
 			}
 			if err != nil {
-				log.Panicf("Error removing chatroom history for room %v, %v", roompath, http.StatusInternalServerError)
+				log.Panicf("Error removing chatroom history for room %v: %v", roompath, err)
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				return
 			} else {
 				w.WriteHeader(http.StatusOK)
 			}
@@ -306,14 +326,16 @@ func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 					for _, user := range allUsers {
 						err = addUserToChatroomRedis(ctx, redisClient, user, roompath)
 						if err != nil {
-							log.Panicf("Error adding user to chatroom %v, %v", http.StatusInternalServerError, err)
+							log.Panicf("Error adding user to chatroom %v: %v", roompath, err)
+							http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+							return
 						}
 					}
 				}()
 			}
 
 			if err != nil {
-				log.Panicf("Error querying Redis with displayname %v %v", displayname, err)
+				log.Panicf("Error querying Redis with displayname %v: %v", displayname, err)
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 				return
 			}
@@ -344,7 +366,9 @@ func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 			}
 
 			if err != nil {
-				log.Panicf("Error adding user to chatroom %v, %v", http.StatusInternalServerError, err)
+				log.Panicf("Error adding user %v to chatroom %v: %v", displayname, roompath, err)
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				return
 			} else {
 				w.WriteHeader(http.StatusOK)
 			}
@@ -369,7 +393,9 @@ func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 			}
 
 			if err != nil {
-				log.Panicf("Error changing username %v to %v in chatroom %v", displayname, newname, http.StatusInternalServerError)
+				log.Panicf("Error changing username %v to %v in chatroom %v: %v", displayname, newname, roompath, err)
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				return
 			} else {
 				w.WriteHeader(http.StatusOK)
 			}
@@ -387,7 +413,9 @@ func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 			}
 
 			if err != nil {
-				log.Panicf("Error removing user from chatroom %v", http.StatusInternalServerError)
+				log.Panicf("Error removing user %v from chatroom %v: %v", displayname, roompath, err)
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				return
 			} else {
 				w.WriteHeader(http.StatusOK)
 			}
