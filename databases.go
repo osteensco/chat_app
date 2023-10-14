@@ -43,10 +43,13 @@ func redisKeyExists(ctx context.Context, client *redis.Client, key string) bool 
 
 	result, err := client.Exists(ctx, key).Result()
 	if err != nil || result == 0 {
+		log.Printf("%v Redis key does not exist. Error: %v", key, err)
 		return false
 	} else if result == 1 {
+		log.Printf("%v Redis key exists", key)
 		return true
 	} else {
+		log.Printf("%v Redis key does not exist. Unexpected result in query: %v", key, result)
 		return false
 	}
 
@@ -151,7 +154,7 @@ func deleteKeyRedis(ctx context.Context, client *redis.Client, key string) error
 func getAllChatroomsRedis(ctx context.Context, client *redis.Client, key string) (map[string]string, error) {
 	rooms, err := client.HGetAll(ctx, key).Result()
 	if err != nil {
-		log.Println("Error getting all chatrooms in lobby:", err)
+		log.Println("Error getting all chatrooms in lobby from Redis:", err)
 	}
 	return rooms, err
 }
@@ -196,10 +199,14 @@ func connectCockrochDB(context context.Context) *pgxpool.Pool {
 }
 
 func createTableIfNotExistsCRDB(ctx context.Context, client *pgxpool.Pool, tblName string, tblSchema string) {
-	_, err := client.Query(ctx, "CREATE TABLE IF NOT EXISTS "+tblName+" "+tblSchema)
+
+	queryString := "CREATE TABLE IF NOT EXISTS " + tblName + " " + tblSchema
+	_, err := client.Query(ctx, queryString)
 	if err != nil {
 		log.Println(err)
+		log.Printf("Query used: %v", queryString)
 	}
+
 }
 
 func addUserToChatroomCRDB(ctx context.Context, client *pgxpool.Pool, displayName string, chatroomPath string) error {
@@ -281,7 +288,7 @@ func changeUserNameCRDB(ctx context.Context, client *pgxpool.Pool, oldName strin
 
 func getMessageHistoryCRDB(ctx context.Context, client *pgxpool.Pool, chatroomPath string) ([]string, error) {
 
-	createTableIfNotExistsCRDB(ctx, client, "messages", "(chatroompath STRING, message ARRAY<STRING>)")
+	createTableIfNotExistsCRDB(ctx, client, "messages", "(chatroompath STRING, message STRING[])")
 
 	var messages []string
 	err := client.QueryRow(ctx, "SELECT message FROM messages WHERE chatroompath = $1", chatroomPath).Scan(&messages)
@@ -324,6 +331,8 @@ func deleteKeyCRDB(ctx context.Context, client *pgxpool.Pool, key string) error 
 }
 
 func getAllChatroomsCRDB(ctx context.Context, client *pgxpool.Pool, key string) (map[string]string, error) {
+
+	createTableIfNotExistsCRDB(ctx, client, "lobby", "(roomname STRING, roompath STRING)")
 
 	rooms := make(map[string]string)
 

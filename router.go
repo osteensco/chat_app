@@ -55,16 +55,18 @@ func lobbyEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 				resetRedisKeyExpiration(ctx, redisClient, key)
 			} else {
 				allChatrooms, err = getAllChatroomsCRDB(ctx, CRDBClient, key)
-				go func() {
-					log.Println("Adding lobby to cache (Redis)")
-					for chatroomName, chatroomPath := range allChatrooms {
-						err := addChatroomToLobbyRedis(ctx, redisClient, key, chatroomPath, chatroomName)
-						if err != nil {
-							log.Println("Error adding chatroom to lobby in Redis:", err)
+				if err == nil {
+					go func() {
+						log.Println("Adding lobby to cache (Redis)")
+						for chatroomName, chatroomPath := range allChatrooms {
+							err := addChatroomToLobbyRedis(ctx, redisClient, key, chatroomPath, chatroomName)
+							if err != nil {
+								log.Println("Error adding chatroom to lobby in Redis:", err)
+							}
 						}
-					}
-					resetRedisKeyExpiration(ctx, redisClient, key)
-				}()
+						resetRedisKeyExpiration(ctx, redisClient, key)
+					}()
+				}
 			}
 
 			if err != nil {
@@ -167,18 +169,20 @@ func messagesEP(w http.ResponseWriter, r *http.Request, ctx context.Context, red
 				resetRedisKeyExpiration(ctx, redisClient, key)
 			} else {
 				chatMessages, err = getMessageHistoryCRDB(ctx, CRDBClient, roompath)
-				go func() {
-					log.Printf("Adding messages in room %v to cache (Redis)", roompath)
-					for _, message := range chatMessages {
-						err = addMessageToHistoryRedis(ctx, redisClient, roompath, message)
-						if err != nil {
-							log.Panicf("Error adding message to chatroom history: %v", err)
-							http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-							return
+				if err == nil {
+					go func() {
+						log.Printf("Adding messages in room %v to cache (Redis)", roompath)
+						for _, message := range chatMessages {
+							err = addMessageToHistoryRedis(ctx, redisClient, roompath, message)
+							if err != nil {
+								log.Panicf("Error adding message to chatroom history: %v", err)
+								http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+								return
+							}
 						}
-					}
-					resetRedisKeyExpiration(ctx, redisClient, key)
-				}()
+						resetRedisKeyExpiration(ctx, redisClient, key)
+					}()
+				}
 			}
 
 			if err != nil {
@@ -330,20 +334,22 @@ func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 				resetRedisKeyExpiration(ctx, redisClient, key)
 			} else {
 				displayNameExists, err = isUserInChatroomCRDB(ctx, CRDBClient, displayname, roompath)
-				go func() {
-					log.Printf("Adding users in room %v to cache (Redis)", roompath)
-					var allUsers []string
-					allUsers, err = getAllUsersInChatroomCRDB(ctx, CRDBClient, roompath)
-					for _, user := range allUsers {
-						err = addUserToChatroomRedis(ctx, redisClient, user, roompath)
-						if err != nil {
-							log.Panicf("Error adding user to chatroom %v: %v", roompath, err)
-							http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-							return
+				if err == nil {
+					go func() {
+						log.Printf("Adding users in room %v to cache (Redis)", roompath)
+						var allUsers []string
+						allUsers, err = getAllUsersInChatroomCRDB(ctx, CRDBClient, roompath)
+						for _, user := range allUsers {
+							err = addUserToChatroomRedis(ctx, redisClient, user, roompath)
+							if err != nil {
+								log.Panicf("Error adding user to chatroom %v: %v", roompath, err)
+								http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+								return
+							}
 						}
-					}
-					resetRedisKeyExpiration(ctx, redisClient, key)
-				}()
+						resetRedisKeyExpiration(ctx, redisClient, key)
+					}()
+				}
 			}
 
 			if err != nil {
