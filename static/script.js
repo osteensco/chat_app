@@ -331,7 +331,8 @@ window.onload = async () => {
             const rooms = await getLobbyChatrooms(lobbyEP)
             console.log(rooms)
             for (const k in rooms) {
-                const room = {data: `{"chatroom": {"name": "${k}", "path": ${rooms[k]}}}`}
+                let roompath = rooms[k].replace('"', '').replace('"', '')
+                const room = {data: `{"chatroom": {"name": "${k}", "path": "${roompath}"}}`}
                 updateRoomList(room)
             }
             

@@ -347,7 +347,6 @@ func getAllChatroomsCRDB(ctx context.Context, client *pgxpool.Pool, key string) 
 		if err := rows.Scan(&key, &value); err != nil {
 			return nil, err
 		}
-
 		rooms[key] = value
 	}
 

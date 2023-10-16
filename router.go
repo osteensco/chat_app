@@ -59,7 +59,7 @@ func lobbyEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 					go func() {
 						log.Println("Adding lobby to cache (Redis)")
 						for chatroomName, chatroomPath := range allChatrooms {
-							err := addChatroomToLobbyRedis(ctx, redisClient, key, chatroomPath, chatroomName)
+							err := addChatroomToLobbyRedis(ctx, redisClient, key, chatroomName, chatroomPath)
 							if err != nil {
 								log.Println("Error adding chatroom to lobby in Redis:", err)
 							}

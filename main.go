@@ -25,16 +25,17 @@ func main() {
 	setHandlers()
 	initAPI(ctx, cacheClient, databaseClient)
 
-	chatrooms, err := getAllChatroomsRedis(ctx, cacheClient, "lobby")
+	chatrooms, err := getAllChatroomsCRDB(ctx, databaseClient, "lobby")
 	if err != nil {
-		log.Printf("Unable to get chatrooms from cache: %v", err)
+		log.Printf("Unable to get chatrooms from database: %v", err)
+	} else {
+		log.Println("Building out RoomList map...")
 	}
 
 	for key, val := range chatrooms {
-		val = val[1 : len(val)-1]
 		room := NewChatroom(key, val)
 		AllRooms[val] = room
-		log.Printf("%v: %v", key, val)
+		log.Printf("Added %v: %v to RoomList map", key, val)
 	}
 
 	go monitorRoomActivity(&AllRooms)
