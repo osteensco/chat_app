@@ -169,6 +169,8 @@ func messagesEP(w http.ResponseWriter, r *http.Request, ctx context.Context, red
 				resetRedisKeyExpiration(ctx, redisClient, key)
 			} else {
 				chatMessages, err = getMessageHistoryCRDB(ctx, CRDBClient, roompath)
+				log.Printf("chatMessages: %v", chatMessages)
+				log.Printf("error: %v", err)
 				if err == nil {
 					go func() {
 						log.Printf("Adding messages in room %v to cache (Redis)", roompath)
@@ -200,6 +202,8 @@ func messagesEP(w http.ResponseWriter, r *http.Request, ctx context.Context, red
 
 			w.Header().Set("Content-Type", "application/json")
 			_, err = w.Write(responsePayload)
+			log.Printf("chatMessages - %v", chatMessages)
+			log.Printf("messages payload sent - %v", responsePayload)
 			if err != nil {
 				log.Panicf("Error writing JSON response: %v", err)
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -229,6 +233,7 @@ func messagesEP(w http.ResponseWriter, r *http.Request, ctx context.Context, red
 				return
 			} else {
 				length = int8(len(messagesArray))
+				log.Printf("message history length for %v: %v", roompath, length)
 				if length == 10 {
 					err = removeMessageFromHistoryCRDB(ctx, CRDBClient, roompath)
 					if err != nil {
@@ -247,8 +252,10 @@ func messagesEP(w http.ResponseWriter, r *http.Request, ctx context.Context, red
 
 			// Update Cache if applicable
 			length, err = getMessageHistoryLengthRedis(ctx, redisClient, roompath)
-			if err != nil || redisKeyExists(ctx, redisClient, key) {
-				w.WriteHeader(http.StatusOK)
+			if err != nil {
+				log.Panicf("Error getting message history length from chatroom %v", roompath)
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				return
 			} else {
 				if length == 10 {
 					err = removeMessageFromHistoryRedis(ctx, redisClient, roompath)
@@ -333,7 +340,9 @@ func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 				displayNameExists, err = isUserInChatroomRedis(ctx, redisClient, displayname, roompath)
 				resetRedisKeyExpiration(ctx, redisClient, key)
 			} else {
+				log.Println("hung up here - 1")
 				displayNameExists, err = isUserInChatroomCRDB(ctx, CRDBClient, displayname, roompath)
+				log.Println("hung up here - 2")
 				if err == nil {
 					go func() {
 						log.Printf("Adding users in room %v to cache (Redis)", roompath)

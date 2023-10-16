@@ -253,15 +253,16 @@ func isUserInChatroomCRDB(ctx context.Context, client *pgxpool.Pool, displayname
 	createTableIfNotExistsCRDB(ctx, client, "users", "(chatroompath STRING, displayname STRING)")
 
 	var isMember bool
-
+	log.Println("hung up here - 3")
 	err := client.QueryRow(ctx, "SELECT TRUE FROM users WHERE displayname = $1 AND chatroompath = $2", displayname, chatroomPath).Scan(&isMember)
+	log.Println("hung up here - 4")
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return false, nil
 		}
 		return false, err
 	}
-
+	log.Println(isMember)
 	return isMember, nil
 
 }
@@ -293,9 +294,14 @@ func getMessageHistoryCRDB(ctx context.Context, client *pgxpool.Pool, chatroomPa
 	var messages []string
 	err := client.QueryRow(ctx, "SELECT message FROM messages WHERE chatroompath = $1", chatroomPath).Scan(&messages)
 	if err != nil {
-		return nil, err
+		log.Printf("1: %v", err)
+		if err == pgx.ErrNoRows {
+			return []string{}, nil
+		} else {
+			return nil, err
+		}
 	}
-
+	log.Println(messages)
 	return messages, nil
 
 }
