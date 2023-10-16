@@ -120,7 +120,7 @@ func monitorRoomActivity(rooms *RoomList) {
 			}
 		}
 
-		time.Sleep(5 * time.Minute)
+		time.Sleep(10 * time.Minute)
 
 	}
 

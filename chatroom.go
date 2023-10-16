@@ -103,10 +103,10 @@ func (cr *Chatroom) startRemovalTimer() {
 			timer.Stop()
 			return
 		} else {
-			if time.Since(startTime) >= 10*time.Minute {
+			if time.Since(startTime) >= 5*time.Minute {
 
 				timer.Stop()
-
+				log.Printf("removing chatroom %v with path %v", cr.name, cr.Path)
 				delete(AllRooms, cr.Path)
 				sendRemoveFromLobbyRequest(cr)
 				sendRemoveMessagesRequest(cr)

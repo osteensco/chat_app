@@ -201,6 +201,7 @@ func connectCockrochDB(context context.Context) *pgxpool.Pool {
 func createTableIfNotExistsCRDB(ctx context.Context, client *pgxpool.Pool, tblName string, tblSchema string) {
 
 	queryString := "CREATE TABLE IF NOT EXISTS " + tblName + " " + tblSchema
+
 	_, err := client.Query(ctx, queryString)
 	if err != nil {
 		log.Println(err)
@@ -225,7 +226,7 @@ func getAllUsersInChatroomCRDB(ctx context.Context, client *pgxpool.Pool, chatro
 
 	var users []string
 
-	rows, err := client.Query(ctx, "SELECT * FROM users WHERE chatroompath = $1", chatroomPath)
+	rows, err := client.Query(ctx, "SELECT displayname FROM users WHERE chatroompath = $1", chatroomPath)
 	if err != nil {
 		return nil, err
 	}
@@ -253,9 +254,7 @@ func isUserInChatroomCRDB(ctx context.Context, client *pgxpool.Pool, displayname
 	createTableIfNotExistsCRDB(ctx, client, "users", "(chatroompath STRING, displayname STRING)")
 
 	var isMember bool
-	log.Println("hung up here - 3")
 	err := client.QueryRow(ctx, "SELECT TRUE FROM users WHERE displayname = $1 AND chatroompath = $2", displayname, chatroomPath).Scan(&isMember)
-	log.Println("hung up here - 4")
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return false, nil
@@ -289,7 +288,7 @@ func changeUserNameCRDB(ctx context.Context, client *pgxpool.Pool, oldName strin
 
 func getMessageHistoryCRDB(ctx context.Context, client *pgxpool.Pool, chatroomPath string) ([]string, error) {
 
-	createTableIfNotExistsCRDB(ctx, client, "messages", "(chatroompath STRING, message STRING[])")
+	createTableIfNotExistsCRDB(ctx, client, "messages", "(chatroompath STRING, message STRING[], CONSTRAINT chatroompath_unique UNIQUE (chatroompath))")
 
 	var messages []string
 	err := client.QueryRow(ctx, "SELECT message FROM messages WHERE chatroompath = $1", chatroomPath).Scan(&messages)
@@ -308,7 +307,9 @@ func getMessageHistoryCRDB(ctx context.Context, client *pgxpool.Pool, chatroomPa
 
 func addMessageToHistoryCRDB(ctx context.Context, client *pgxpool.Pool, chatroomPath string, chatMessage string) error {
 
-	_, err := client.Query(ctx, "UPDATE messages SET message = ARRAY_APPEND(message, $2) WHERE chatroompath = $1", chatroomPath, chatMessage)
+	queryString := "INSERT INTO messages (chatroompath, message) VALUES ($1, ARRAY[$2]) ON CONFLICT (chatroompath) DO update SET message = messages.message || EXCLUDED.message"
+
+	_, err := client.Query(ctx, queryString, chatroomPath, chatMessage)
 	if err != nil {
 		log.Println("Error adding message to chatroom history:", err)
 	}
