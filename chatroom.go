@@ -100,16 +100,17 @@ func (cr *Chatroom) startRemovalTimer() {
 	for {
 		<-timer.C
 		if len(cr.clients) != 0 {
+			log.Printf("removal timer stopped for chatroom %v with path %v, %v users currently in chatroom", cr.name, cr.Path, len(cr.clients))
 			timer.Stop()
 			return
 		} else {
-			if time.Since(startTime) >= 5*time.Minute {
+			if time.Since(startTime) >= 10*time.Minute {
 
 				timer.Stop()
 				log.Printf("removing chatroom %v with path %v", cr.name, cr.Path)
 				delete(AllRooms, cr.Path)
-				sendRemoveFromLobbyRequest(cr)
-				sendRemoveMessagesRequest(cr)
+				go sendRemoveFromLobbyRequest(cr)
+				go sendRemoveMessagesRequest(cr)
 			}
 		}
 

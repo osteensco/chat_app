@@ -293,7 +293,6 @@ func getMessageHistoryCRDB(ctx context.Context, client *pgxpool.Pool, chatroomPa
 	var messages []string
 	err := client.QueryRow(ctx, "SELECT message FROM messages WHERE chatroompath = $1", chatroomPath).Scan(&messages)
 	if err != nil {
-		log.Printf("1: %v", err)
 		if err == pgx.ErrNoRows {
 			return []string{}, nil
 		} else {
