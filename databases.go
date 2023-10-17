@@ -202,7 +202,7 @@ func createTableIfNotExistsCRDB(ctx context.Context, client *pgxpool.Pool, tblNa
 
 	queryString := "CREATE TABLE IF NOT EXISTS " + tblName + " " + tblSchema
 
-	_, err := client.Query(ctx, queryString)
+	_, err := client.Exec(ctx, queryString)
 	if err != nil {
 		log.Println(err)
 		log.Printf("Query used: %v", queryString)
@@ -214,7 +214,7 @@ func addUserToChatroomCRDB(ctx context.Context, client *pgxpool.Pool, displayNam
 
 	createTableIfNotExistsCRDB(ctx, client, "users", "(chatroompath STRING, displayname STRING)")
 
-	_, err := client.Query(ctx, "INSERT INTO users (chatroompath, displayname) VALUES ($1, $2)", chatroomPath, displayName)
+	_, err := client.Exec(ctx, "INSERT INTO users (chatroompath, displayname) VALUES ($1, $2)", chatroomPath, displayName)
 	if err != nil {
 		log.Println("Error adding user to chatroom:", err)
 	}
@@ -268,7 +268,7 @@ func isUserInChatroomCRDB(ctx context.Context, client *pgxpool.Pool, displayname
 
 func removeUserFromChatroomCRDB(ctx context.Context, client *pgxpool.Pool, displayName string, chatroomPath string) error {
 
-	_, err := client.Query(ctx, "DELETE FROM users WHERE displayname = $1 AND chatroompath = $2", displayName, chatroomPath)
+	_, err := client.Exec(ctx, "DELETE FROM users WHERE displayname = $1 AND chatroompath = $2", displayName, chatroomPath)
 	if err != nil {
 		log.Println("Error removing user from chatroom:", err)
 	}
@@ -278,7 +278,8 @@ func removeUserFromChatroomCRDB(ctx context.Context, client *pgxpool.Pool, displ
 
 func changeUserNameCRDB(ctx context.Context, client *pgxpool.Pool, oldName string, newName string, chatroomPath string) error {
 
-	_, err := client.Query(ctx, "UPDATE users SET displayname = $1 WHERE displayname = $2 AND chatroompath = $3", newName, oldName, chatroomPath)
+	_, err := client.Exec(ctx, "UPDATE users SET displayname = $1 WHERE displayname = $2 AND chatroompath = $3", newName, oldName, chatroomPath)
+	log.Println("changename completed")
 	if err != nil {
 		log.Println("Error updating user displayname:", err)
 	}
@@ -308,7 +309,7 @@ func addMessageToHistoryCRDB(ctx context.Context, client *pgxpool.Pool, chatroom
 
 	queryString := "INSERT INTO messages (chatroompath, message) VALUES ($1, ARRAY[$2]) ON CONFLICT (chatroompath) DO update SET message = messages.message || EXCLUDED.message"
 
-	_, err := client.Query(ctx, queryString, chatroomPath, chatMessage)
+	_, err := client.Exec(ctx, queryString, chatroomPath, chatMessage)
 	if err != nil {
 		log.Println("Error adding message to chatroom history:", err)
 	}
@@ -318,7 +319,21 @@ func addMessageToHistoryCRDB(ctx context.Context, client *pgxpool.Pool, chatroom
 
 func removeMessageFromHistoryCRDB(ctx context.Context, client *pgxpool.Pool, chatroomPath string) error {
 
-	_, err := client.Query(ctx, "UPDATE messages SET message = message[1:] WHERE chatroompath = $1", chatroomPath)
+	_, err := client.Exec(
+		ctx, `
+		UPDATE messages
+		SET message = (
+			SELECT ARRAY_AGG(msg)
+			FROM (
+				SELECT UNNEST(message) AS msg
+				FROM messages
+				WHERE chatroompath = $1
+				OFFSET 1
+			)
+		)
+		WHERE chatroompath = $1;
+	`,
+		chatroomPath)
 	if err != nil {
 		log.Println("Error removing message from chatroom history:", err)
 	}
@@ -328,7 +343,7 @@ func removeMessageFromHistoryCRDB(ctx context.Context, client *pgxpool.Pool, cha
 
 func deleteKeyCRDB(ctx context.Context, client *pgxpool.Pool, key string) error {
 
-	_, err := client.Query(ctx, "DELETE FROM messages WHERE chatroompath = $1", key)
+	_, err := client.Exec(ctx, "DELETE FROM messages WHERE chatroompath = $1", key)
 	if err != nil {
 		log.Println("Error deleting message history of chatroom:", err)
 	}
@@ -366,7 +381,7 @@ func getAllChatroomsCRDB(ctx context.Context, client *pgxpool.Pool, key string) 
 
 func addChatroomToLobbyCRDB(ctx context.Context, client *pgxpool.Pool, roomname string, roompath string) error {
 
-	_, err := client.Query(ctx, "INSERT INTO lobby (roomname, roompath) VALUES ($1, $2)", roomname, roompath)
+	_, err := client.Exec(ctx, "INSERT INTO lobby (roomname, roompath) VALUES ($1, $2)", roomname, roompath)
 	if err != nil {
 		log.Println("Error adding chatroom to lobby:", err)
 	}
@@ -376,7 +391,7 @@ func addChatroomToLobbyCRDB(ctx context.Context, client *pgxpool.Pool, roomname 
 
 func removeChatroomFromLobbyCRDB(ctx context.Context, client *pgxpool.Pool, roomname string) error {
 
-	_, err := client.Query(ctx, "DELETE FROM lobby WHERE roomname = $1", roomname)
+	_, err := client.Exec(ctx, "DELETE FROM lobby WHERE roomname = $1", roomname)
 	if err != nil {
 		log.Println("Error removing chatroom from lobby:", err)
 	}
