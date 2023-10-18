@@ -46,9 +46,3 @@ func main() {
 	}
 
 }
-
-// TODO
-
-// bugs
-
-//	 - window unloads before both removeDisplayNameFromRoom and roomExitMessage functions fire
