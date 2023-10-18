@@ -63,7 +63,8 @@ type Chatroom struct {
 func (cr *Chatroom) registerClient(client *Client) {
 
 	cr.clients[client] = true
-	log.Printf("registered client with chatroom %v", cr.Path)
+	cr.hash[client.Name] = client
+	log.Printf("registered client %v with chatroom %v", client.Name, cr.Path)
 
 }
 
@@ -80,8 +81,10 @@ func (cr *Chatroom) removeClient(client *Client) {
 
 func (cr *Chatroom) UpdateClientName(currentname string, newname string) error {
 
+	log.Println("UpdateClientName called")
 	client, ok := cr.hash[currentname]
 	if !ok {
+		log.Printf("chatroom hash: %v", cr.hash)
 		return fmt.Errorf("Client %v not found in chatroom %v hash", currentname, cr.Path)
 	}
 	cr.hash[newname] = client
@@ -110,7 +113,7 @@ func (cr *Chatroom) handleConnections(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	username := string(usernameMessage)
-	log.Println(username)
+	log.Printf("received client name - %v", username)
 
 	client := NewClient(conn, cr, username)
 

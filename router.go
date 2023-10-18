@@ -418,19 +418,27 @@ func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 			err := changeUserNameCRDB(ctx, CRDBClient, displayname, newname, roompath)
 
 			if err == nil {
+
 				room, ok := AllRooms[roompath]
+
 				if !ok {
 					log.Panicf("Roompath %v not found in AllRooms map!", roompath)
 					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 					return
 				}
 				err = room.UpdateClientName(displayname, newname)
+				if err != nil {
+					log.Panicln(err)
+					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+					return
+				}
 				if redisKeyExists(ctx, redisClient, key) {
 					err = changeUserNameRedis(ctx, redisClient, displayname, newname, roompath)
 				}
 			}
 
 			if err != nil {
+
 				log.Panicf("Error changing username %v to %v in chatroom %v: %v", displayname, newname, roompath, err)
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 				return

@@ -285,7 +285,6 @@ func removeUserFromChatroomCRDB(ctx context.Context, client *pgxpool.Pool, displ
 func changeUserNameCRDB(ctx context.Context, client *pgxpool.Pool, oldName string, newName string, chatroomPath string) error {
 
 	_, err := client.Exec(ctx, "UPDATE users SET displayname = $1 WHERE displayname = $2 AND chatroompath = $3", newName, oldName, chatroomPath)
-	log.Println("changename completed")
 	if err != nil {
 		log.Println("Error updating user displayname:", err)
 	}

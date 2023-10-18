@@ -50,4 +50,4 @@ func main() {
 // TODO
 
 // bugs
-//	 - chatroom user has left messages uses wrong name if changed
+//	 - chatroom user has changed their name message does not write to database
