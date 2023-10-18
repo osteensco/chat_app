@@ -13,7 +13,7 @@ func main() {
 	godotenv.Load()
 	ctx := context.Background()
 
-	cacheClient := connectRedis(ctx)
+	cacheClient := connectRedis(ctx, 1)
 	log.Println(cacheClient)
 
 	databaseClient := connectCockrochDB(ctx)
@@ -46,3 +46,8 @@ func main() {
 	}
 
 }
+
+// TODO
+
+// bugs
+//	 - chatroom user has left messages uses wrong name if changed

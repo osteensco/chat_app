@@ -110,6 +110,7 @@ func (cr *Chatroom) handleConnections(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	username := string(usernameMessage)
+	log.Println(username)
 
 	client := NewClient(conn, cr, username)
 

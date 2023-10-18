@@ -39,6 +39,7 @@ func (c *Client) readMessages() {
 		if !json.Valid(payload) {
 			pushToChannel(payload, c.Chatroom.clients)
 		} else {
+			log.Println("valid json, creating new chatroom")
 			createNewChatroomFromMessage(c, payload)
 		}
 
@@ -60,9 +61,13 @@ func (c *Client) writeMessages() {
 	defer func() {
 
 		log.Println("closing client connection in WM go routine")
-		msg := c.Name + " has left the chatroom"
-		go sendPostUserLeftMessage(c.Chatroom, msg)
-		pushToChannel([]byte(msg), c.Chatroom.clients)
+
+		if c.Chatroom.name != "index" {
+			msg := c.Name + " has left the chatroom"
+			go sendPostUserLeftMessage(c.Chatroom, msg)
+			pushToChannel([]byte(msg), c.Chatroom.clients)
+		}
+
 		c.Chatroom.removeClient(c)
 
 	}()

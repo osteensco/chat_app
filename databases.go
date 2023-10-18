@@ -13,7 +13,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func connectRedis(context context.Context) *redis.Client {
+func connectRedis(context context.Context, try int) *redis.Client {
 
 	redisAddr := os.Getenv("REDISADDRESS")
 	redisPass := os.Getenv("REDISPASSWORD")
@@ -28,7 +28,13 @@ func connectRedis(context context.Context) *redis.Client {
 	state, err := client.Ping(context).Result()
 	log.Println(state)
 	if err != nil {
-		log.Fatal(err)
+		if try <= 5 {
+			log.Printf("having trouble connecting to Redis, retrying(%v)...", try)
+			client = connectRedis(context, try+1)
+		} else {
+			log.Fatal(err)
+		}
+
 	} else if state == "PONG" {
 		log.Println("connection to Redis established")
 	} else {

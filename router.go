@@ -105,9 +105,9 @@ func lobbyEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 				log.Panicf("Error adding chatroom to %v: %v", key, err)
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 				return
-			} else {
-				w.WriteHeader(http.StatusOK)
 			}
+
+			w.WriteHeader(http.StatusOK)
 
 		}(w, r)
 

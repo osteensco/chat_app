@@ -165,12 +165,13 @@ async function addRoomToLobbyDB(lobbyEP, message) {
     const roompath = roominfo.chatroom.path;
     const roomname = roominfo.chatroom.name;
     const lobbyQuery = `http://${lobbyEP}?roomname=${roomname}&roompath=${roompath}`;
-    await fetch(lobbyQuery, {
+    const response = await fetch(lobbyQuery, {
         method: "POST",
         headers: {
             'Content-Type': 'application/json'
         },
     });
+    console.log("add room to lobby request - "+response.status)
 }
 
 async function getNameInput(conn, usersEP, pagePath) {
@@ -289,7 +290,7 @@ window.onload = async () => {
         let nameInputButton = document.getElementById("nameInputButton");
         let displayname = document.getElementById("sender");
         const newmessage = document.getElementById("message");
-        
+
 
         if (chatmessage) {
             await populateMessages(messagesEP, pagePath);
@@ -323,6 +324,11 @@ window.onload = async () => {
 
         if (createroom) {
             let conn = new WebSocket(socketURL);
+            conn.onopen = () => {
+                const payload = 'ClientNameCookiePlaceholder';
+                conn.send(payload);
+            };
+            console.log(conn);
             const rooms = await getLobbyChatrooms(lobbyEP);
             console.log(rooms);
             for (const k in rooms) {
@@ -332,10 +338,12 @@ window.onload = async () => {
             }
             
             createroom.onsubmit = (event) => {
+                console.log('create room on submit')
                 event.preventDefault();
                 createChatroom(lobbyEP, conn);
             };
             conn.onmessage = (message) => {
+                console.log(message)
                 if (message.data != "client disconnect") {
                     updateRoomList(message);
                 }
