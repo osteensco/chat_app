@@ -32,8 +32,8 @@ func lobbyEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 		log.Panicf("roompath query parameter not provided! Request URL provided was %v", r.URL)
 	}
 
-	// roomname := strings.ReplaceAll(r.URL.Query().Get("roomname"), " ", "%20")
 	roomname := r.URL.Query().Get("roomname")
+
 	if roomname == "" {
 		log.Panicf("roompath query parameter not provided! Request URL provided was %v", r.URL)
 	}
@@ -417,8 +417,17 @@ func usersEP(w http.ResponseWriter, r *http.Request, ctx context.Context, redisC
 
 			err := changeUserNameCRDB(ctx, CRDBClient, displayname, newname, roompath)
 
-			if err == nil && redisKeyExists(ctx, redisClient, key) {
-				changeUserNameRedis(ctx, redisClient, displayname, newname, roompath)
+			if err == nil {
+				room, ok := AllRooms[roompath]
+				if !ok {
+					log.Panicf("Roompath %v not found in AllRooms map!", roompath)
+					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+					return
+				}
+				err = room.UpdateClientName(displayname, newname)
+				if redisKeyExists(ctx, redisClient, key) {
+					err = changeUserNameRedis(ctx, redisClient, displayname, newname, roompath)
+				}
 			}
 
 			if err != nil {

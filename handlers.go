@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -64,7 +65,7 @@ func setHandlers() {
 func sendRemoveFromLobbyRequest(cr *Chatroom) {
 
 	apiURL := "http://" + Address + ":" + Port + "/api/lobby?roomname=" + cr.name + "&roompath=" + cr.Path
-	req, err := http.NewRequest("DELETE", apiURL, nil)
+	req, err := http.NewRequest("DELETE", strings.ReplaceAll(apiURL, " ", "%20"), nil)
 	if err != nil {
 		log.Println("Error creating DELETE request:", err)
 		return
@@ -88,7 +89,7 @@ func sendRemoveFromLobbyRequest(cr *Chatroom) {
 func sendRemoveMessagesRequest(cr *Chatroom) {
 
 	apiURL := "http://" + Address + ":" + Port + "/api/messages?roompath=" + cr.Path
-	req, err := http.NewRequest("DELETE", apiURL, nil)
+	req, err := http.NewRequest("DELETE", strings.ReplaceAll(apiURL, " ", "%20"), nil)
 	if err != nil {
 		log.Println("Error creating DELETE request:", err)
 		return
@@ -107,6 +108,28 @@ func sendRemoveMessagesRequest(cr *Chatroom) {
 
 	defer resp.Body.Close()
 
+}
+
+func sendPostUserLeftMessage(cr *Chatroom, msg string) {
+	apiURL := "http://" + Address + ":" + Port + "/api/messages?roompath=" + cr.Path + "&chatmessage=" + msg
+	req, err := http.NewRequest("POST", strings.ReplaceAll(apiURL, " ", "%20"), nil)
+	if err != nil {
+		log.Println("Error creating POST request:", err)
+		return
+	}
+
+	reqclient := &http.Client{}
+	resp, err := reqclient.Do(req)
+	if err != nil {
+		log.Println("Error sending POST request:", err)
+		return
+	}
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("POST request to %v failed with status code: %v", apiURL, resp.StatusCode)
+		return
+	}
+
+	defer resp.Body.Close()
 }
 
 func monitorRoomActivity(rooms *RoomList) {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -47,12 +48,15 @@ var upgrader = websocket.Upgrader{
 
 type ClientList map[*Client]bool
 
+type ClientMap map[string]*Client
+
 type RoomList map[string]*Chatroom
 
 type Chatroom struct {
 	name    string
 	Path    string
 	clients ClientList
+	hash    ClientMap
 	Channel chan []byte
 }
 
@@ -74,6 +78,21 @@ func (cr *Chatroom) removeClient(client *Client) {
 
 }
 
+func (cr *Chatroom) UpdateClientName(currentname string, newname string) error {
+
+	client, ok := cr.hash[currentname]
+	if !ok {
+		return fmt.Errorf("Client %v not found in chatroom %v hash", currentname, cr.Path)
+	}
+	cr.hash[newname] = client
+	delete(cr.hash, currentname)
+	client.Name = newname
+	log.Printf("updated client name in AllRooms map")
+
+	return nil
+
+}
+
 func (cr *Chatroom) handleConnections(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("new client entering chatroom with path %v", cr.Path)
@@ -84,7 +103,15 @@ func (cr *Chatroom) handleConnections(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := NewClient(conn, cr)
+	_, usernameMessage, err := conn.ReadMessage()
+	if err != nil {
+		log.Panicf("Error reading username message: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	username := string(usernameMessage)
+
+	client := NewClient(conn, cr, username)
 
 	cr.registerClient(client)
 
@@ -95,7 +122,7 @@ func (cr *Chatroom) handleConnections(w http.ResponseWriter, r *http.Request) {
 func (cr *Chatroom) startRemovalTimer() {
 
 	startTime := time.Now()
-	timer := time.NewTimer(1 * time.Minute)
+	timer := time.NewTimer(5 * time.Minute)
 
 	for {
 		<-timer.C
@@ -104,7 +131,7 @@ func (cr *Chatroom) startRemovalTimer() {
 			timer.Stop()
 			return
 		} else {
-			if time.Since(startTime) >= 10*time.Minute {
+			if time.Since(startTime) >= 5*time.Minute {
 
 				timer.Stop()
 				log.Printf("removing chatroom %v with path %v", cr.name, cr.Path)
@@ -125,6 +152,7 @@ func NewChatroom(n string, p string) *Chatroom {
 		name:    n,
 		Path:    p,
 		clients: make(ClientList),
+		hash:    make(ClientMap),
 		Channel: make(chan []byte),
 	}
 

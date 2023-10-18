@@ -14,6 +14,7 @@ func pushToChannel(payload []byte, clients ClientList) {
 }
 
 type Client struct {
+	Name       string
 	connection *websocket.Conn
 	Chatroom   *Chatroom
 }
@@ -45,21 +46,32 @@ func (c *Client) readMessages() {
 
 }
 
+func (c *Client) sendMessage(message []byte) error {
+	if err := c.connection.WriteMessage(websocket.TextMessage, message); err != nil {
+		log.Printf("error in room %v, error writing message - %v", c.Chatroom.Path, err)
+		return err
+	}
+	log.Printf("message sent in chatroom: %v", c.Chatroom.Path)
+	return nil
+}
+
 func (c *Client) writeMessages() {
 
 	defer func() {
 
 		log.Println("closing client connection in WM go routine")
+		msg := c.Name + " has left the chatroom"
+		go sendPostUserLeftMessage(c.Chatroom, msg)
+		pushToChannel([]byte(msg), c.Chatroom.clients)
 		c.Chatroom.removeClient(c)
 
 	}()
 
 	for message := range c.Chatroom.Channel {
-		if err := c.connection.WriteMessage(websocket.TextMessage, message); err != nil {
-			log.Printf("error in room %v, error writing message - %v", c.Chatroom.Path, err)
+		err := c.sendMessage(message)
+		if err != nil {
 			return
 		}
-		log.Printf("message sent in chatroom: %v", c.Chatroom.Path)
 	}
 
 }
@@ -69,10 +81,11 @@ func (c *Client) handleMessages() {
 	go c.writeMessages()
 }
 
-func NewClient(conn *websocket.Conn, cr *Chatroom) *Client {
+func NewClient(conn *websocket.Conn, cr *Chatroom, username string) *Client {
 
 	log.Printf("new client connected to chatroom with path %v", cr.Path)
 	return &Client{
+		Name:       username,
 		connection: conn,
 		Chatroom:   cr,
 	}

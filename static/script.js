@@ -240,14 +240,6 @@ async function roomEntranceMessage(messagesEP, conn, displayname, roompath) {
 
 }
 
-async function roomExitMessage(messagesEP, conn, displayname, roompath) {
-
-    const messageString = `${displayname} has left the room`
-    conn.send(messageString)
-    await logMessageToDB(messagesEP, roompath, messageString)
-
-}
-
 function receiveMessage(message) {
 
     let chatbox = document.getElementById("chatmessages");
@@ -290,8 +282,6 @@ window.onload = async () => {
         } else {
             socketURL = "ws://" + pageHost + "/ws_chatroom" + pagePath;
         }
-        
-        let conn = new WebSocket(socketURL);
 
         let chatmessage = document.getElementById("chatroom-message");
         let createroom = document.getElementById("chatroom-create");
@@ -306,11 +296,15 @@ window.onload = async () => {
             const defaultName = await generateAnon(usersEP, pagePath);
             nameInput.value = defaultName;
             displayname.value = defaultName;
+            let conn = new WebSocket(socketURL);
+            conn.onopen = () => {
+                const payload = defaultName;
+                conn.send(payload);
+            };
             roomEntranceMessage(messagesEP, conn, displayname.value, pagePath);
 
             window.onunload = async () => {
                 await removeDisplayNameFromRoom(pagePath, usersEP, displayname.value);
-                await roomExitMessage(messagesEP, conn, displayname.value, pagePath);
             };
             
             nameInputButton.onclick = async () => {
@@ -328,12 +322,13 @@ window.onload = async () => {
         }
 
         if (createroom) {
-            const rooms = await getLobbyChatrooms(lobbyEP)
-            console.log(rooms)
+            let conn = new WebSocket(socketURL);
+            const rooms = await getLobbyChatrooms(lobbyEP);
+            console.log(rooms);
             for (const k in rooms) {
-                let roompath = rooms[k].replace('"', '').replace('"', '')
-                const room = {data: `{"chatroom": {"name": "${k}", "path": "${roompath}"}}`}
-                updateRoomList(room)
+                let roompath = rooms[k].replace('"', '').replace('"', '');
+                const room = {data: `{"chatroom": {"name": "${k}", "path": "${roompath}"}}`};
+                updateRoomList(room);
             }
             
             createroom.onsubmit = (event) => {
