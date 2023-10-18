@@ -185,13 +185,13 @@ async function getNameInput(conn, usersEP, pagePath) {
     return nameInput.value
 }
 
-async function changeName(conn, usersEP, pagePath) {
+async function changeName(conn, usersEP, messagesEP, roompath) {
 
     const outputName = document.getElementById('sender');
-    const newName = await getNameInput(conn, usersEP, pagePath, outputName.value);
+    const newName = await getNameInput(conn, usersEP, roompath, outputName.value);
 
     if (newName != 'undefined') {
-        const path = pagePath.replace("/chatroom/","");
+        const path = roompath.replace("/chatroom/","");
         const userQuery = `http://${usersEP}?displayname=${outputName.value}&roompath=${path}&newname=${newName}`;
         await fetch(userQuery, {
             method: "PUT",
@@ -199,7 +199,9 @@ async function changeName(conn, usersEP, pagePath) {
                 'Content-Type': 'application/json'
             },
         });
-        conn.send(`${outputName.value} changed their name to ${newName}`);
+        const msg = `${outputName.value} changed their name to ${newName}`;
+        await logMessageToDB(messagesEP, roompath, msg);
+        conn.send(msg);
         outputName.value = newName;
     } else {
         let nameInput = document.getElementById('nameInput');
@@ -309,7 +311,7 @@ window.onload = async () => {
             };
             
             nameInputButton.onclick = async () => {
-                await changeName(conn, usersEP, pagePath);
+                await changeName(conn, usersEP, messagesEP, pagePath);
             };
             chatmessage.onsubmit = (event) => {  
                 event.preventDefault();

@@ -48,6 +48,4 @@ func main() {
 }
 
 // TODO
-
-// bugs
-//	 - chatroom user has changed their name message does not write to database
+//	 - app should be resilient to cache failure
