@@ -46,6 +46,3 @@ func main() {
 	}
 
 }
-
-// TODO
-//	 - app should be resilient to cache failure

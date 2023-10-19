@@ -31,8 +31,6 @@ func connectRedis(context context.Context, try int) *redis.Client {
 		if try <= 5 {
 			log.Printf("having trouble connecting to Redis, retrying(%v)...", try)
 			client = connectRedis(context, try+1)
-		} else {
-			log.Fatal(err)
 		}
 
 	} else if state == "PONG" {
